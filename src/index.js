@@ -2,125 +2,136 @@ var fs = require("fs"),
     request = require("request"),
     parse = require("csv-parse"),
     format = require("csv-stringify"),
-    through = require("through"),
+    queue = require("queue-async"),
     extend = require("extend");
 
-module.exports = function(input,output,options) {
+var defaults = {
+  "verbose": false,
+  "url": "https://maps.googleapis.com/maps/api/geocode/json?address=",
+  "latColumn": null,
+  "lngColumn": null,
+  "addressColumn": null,
+  "timeout": 250,
+  "force": false,
+  "handler": googleHandler
+};
 
-  var addressCache = {}; //Cached results by address
+module.exports = function(inFile,outFile,userOptions,onEnd) {
 
-  //Input CSV
-  input = fs.createReadStream(input);
-
-  //ex: geocode(inputFile)
-  if (arguments.length === 1) {
-    options = {};
-    output = process.stdout;
-  } else if (arguments.length === 2) {
-    //ex: geocode(inputFile,{options})
-    if (typeof output !== "string") {
-      options = output;
-      output = process.stdout;
-    //ex: geocode(inputFile,outputFile)
-    } else {
+  var addressCache = {}, //Cached results by address
+      q = queue(1),
+      formatter = format({ header: true }),
+      input = fs.createReadStream(inFile),
+      output = process.stdout,
       options = {};
-      output = fs.createWriteStream(output);
+
+  if (arguments.length === 2) {
+    if (typeof outFile === "string") {
+      output = fs.createWriteStream(outFile);
+    } else {
+      options = outFile;
     }
-  //ex: geocode(inputFile,outputFile,{options})
-  } else {
-    output = fs.createWriteStream(output);
+  } else if (arguments.length === 3) {
+    output = fs.createWriteStream(outFile);
+    options = userOptions;
   }
 
   //Default options
-  options = extend({
-    "verbose": false,
-    "url": "https://maps.googleapis.com/maps/api/geocode/json?address=",
-    "latColumn": null,
-    "lngColumn": null,
-    "addressColumn": null,
-    "timeout": 250,
-    "handler": googleHandler
-  },options);
+  options = extend(defaults,options);
+
+  formatter.pipe(output);
 
   //extend options with defaults
   input.pipe(parse({ columns: true }))
-    .pipe(through(
-      function write(row) {
+    .on("data",function(row){
 
-        //If there are unset column names,
-        //try to discover them on the first data row
-        if (options.latColumn === null || options.lngColumn === null || options.addressColumn === null) {
-          options = discover(options,row);
-        }
-
-        //Supplied address column doesn't exist
-        if (row[options.addressColumn] === undefined) {
-          throw new Error("Couldn't find address column '"+options.addressColumn+"'");
-        }
-
-        //Doesn't need geocoding
-        if (numeric(row[options.latColumn]) && numeric(row[options.lngColumn])) {
-          return this.queue(row);
-        }
-
-        //We've cached this address from a previous result
-        if (addressCache[row[options.addressColumn]]) {
-
-          row[options.latColumn] = addressCache[row[options.addressColumn]].lat;
-          row[options.lngColumn] = addressCache[row[options.addressColumn]].lng;
-
-          return this.queue(row);
-
-        }
-
-        //Pause stream b/c of API throttling
-        this.pause();
-
-        request.get(options.url+escaped(row[options.addressColumn]),function(err,response,body){
-
-          var result;
-
-          //Unknown HTTP error code
-          if (err) {
-            throw new Error(err);
-          }
-
-          result = options.processor(body);
-
-          if (typeof result === "string") {
-
-            row[options.latColumn] = "";
-            row[options.lngColumn] = "";
-
-            if (options.verbose) {
-              console.warn("FAILED: "+row[options.addressColumn]+" ("+result+")");
-            }
-          } else if ("lat" in result && "lng" in result) {
-
-            row[options.latColumn] = result.lat;
-            row[options.lngColumn] = result.lng;
-
-            //Cache the result
-            addressCache[row[options.addressColumn]] = result;
-
-          } else {
-            throw new Error("Unknown error: couldn't extract result from response body:\n\n"+body);
-          }
-
-          setTimeout(function(){
-            //Unpause stream
-            this.queue(row);
-            this.resume();
-          }.bind(this),options.timeout);
-
-        }.bind(this));
-      },
-      function end() {
-        //figure out how to do summary reporting here
+      //If there are unset column names,
+      //try to discover them on the first data row
+      if (options.latColumn === null || options.lngColumn === null || options.addressColumn === null) {
+        options = discover(options,row);
       }
-    ))
-    .pipe(format({ header: true }))
-    .pipe(output);
+
+      q.defer(geocode,row);
+
+
+    })
+    .on("end",function(){
+      q.awaitAll(done);
+    });
+
+    function geocode(row,cb) {
+
+      var cbgb = function(){
+        return cb(null,!!(row.lat && row.lng));
+      };
+
+      //Supplied address column doesn't exist
+      if (row[options.addressColumn] === undefined) {
+        throw new Error("Couldn't find address column '"+options.addressColumn+"'");
+      }
+
+      //Doesn't need geocoding
+      if (!options.force && numeric(row[options.latColumn]) && numeric(row[options.lngColumn])) {
+        return formatter.write(row,cbgb);
+      }
+
+      //Address is cached from a previous result
+      if (addressCache[row[options.addressColumn]]) {
+
+        row[options.latColumn] = addressCache[row[options.addressColumn]].lat;
+        row[options.lngColumn] = addressCache[row[options.addressColumn]].lng;
+
+        return formatter.write(row,cbgb);
+
+      }
+
+      request.get(options.url+escaped(row[options.addressColumn]),function(err,response,body){
+
+        var result;
+
+        //Unknown HTTP error code
+        if (err) {
+          /* EMIT ERROR */
+          throw new Error(err);
+        }
+
+        result = options.handler(body);
+
+        if (typeof result === "string") {
+
+          row[options.latColumn] = "";
+          row[options.lngColumn] = "";
+
+          /*
+          EMIT ERROR
+          if (options.verbose) {
+            console.warn("FAILED: "+row[options.addressColumn]+" ("+result+")");
+          }*/
+
+        } else if ("lat" in result && "lng" in result) {
+
+          row[options.latColumn] = result.lat;
+          row[options.lngColumn] = result.lng;
+
+          //Cache the result
+          addressCache[row[options.addressColumn]] = result;
+
+        } else {
+          /* EMIT ERROR */
+          throw new Error("Unknown error: couldn't extract result from response body:\n\n"+body);
+        }
+
+        return formatter.write(row,function(){
+          setTimeout(cbgb,options.timeout);
+        });
+
+      });
+
+    }
+
+    function done(err,results) {
+      console.log("DONE",err,results);
+    }
 
 };
 
@@ -145,12 +156,7 @@ function googleHandler(body) {
 
 //Is numeric?
 function numeric(number) {
-  if (typeof number === "number") {
-    return number <= 180 && number >= -180;
-  } else if (typeof number === "string") {
-    return number.length > 0 && !isNaN(+number) && +number <= 180 && +number >= -180;
-  }
-  return false;
+  return !Array.isArray(number) && (number - parseFloat(number) + 1) >= 0 && number >= -180 && number <= 180;
 }
 
 //Escape address to include as GET parameter
