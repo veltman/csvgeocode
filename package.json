@@ -1,0 +1,28 @@
+{
+  "name": "address-book",
+  "version": "0.0.1",
+  "description": "Bulk geocode addresses in a CSV.",
+  "main": "src/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/veltman/address-book.git"
+  },
+  "keywords": [
+    "geocode",
+    "geocoding",
+    "address",
+    "csv"
+  ],
+  "author": "Noah Veltman (@veltman)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/veltman/address-book/issues"
+  },
+  "homepage": "https://github.com/veltman/address-book"
+}
