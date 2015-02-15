@@ -80,7 +80,7 @@ Geocoder.prototype.run = function() {
         this.options = discover(this.options,row);
 
         if (this.options.addressColumn === null) {
-          this.emit("err","Couldn't auto-detect address column.");
+          this.emit("failure","[ERROR] Couldn't auto-detect address column.");
         }
 
       }
@@ -104,12 +104,13 @@ Geocoder.prototype.code = function(row,cb) {
   };
 
   if (row[this.options.addressColumn] === undefined) {
-    this.emit("err","Couldn't find address column '"+this.options.addressColumn+"'");
+    this.emit("failure","[ERROR] Couldn't find address column '"+this.options.addressColumn+"'");
     return this.formatter.write(row,cbgb);
   }
 
   //Doesn't need geocoding
   if (!this.options.force && numeric(row[this.options.latColumn]) && numeric(row[this.options.lngColumn])) {
+    this.emit("success",row[this.options.addressColumn]);
     return this.formatter.write(row,cbgb);
   }
 
@@ -119,6 +120,7 @@ Geocoder.prototype.code = function(row,cb) {
     row[this.options.latColumn] = this.cache[row[this.options.addressColumn]].lat;
     row[this.options.lngColumn] = this.cache[row[this.options.addressColumn]].lng;
 
+    this.emit("success",row[this.options.addressColumn]);
     return this.formatter.write(row,cbgb);
 
   }
@@ -130,18 +132,18 @@ Geocoder.prototype.code = function(row,cb) {
     //Some other error
     if (err) {
 
-      this.emit("err",err);
+      this.emit("failure","[ERROR]"+err.toString());
 
     } else if (response.statusCode !== 200) {
 
-      this.emit("err","HTTP Status: "+response.statusCode);
+      this.emit("failure","[ERROR] HTTP Status "+response.statusCode);
 
     } else {
 
       try {
         result = this.options.handler(body,row[this.options.addressColumn]);
       } catch(e) {
-        this.emit("err",e);
+        this.emit("failure","[ERROR] Parsing error: "+e);
       }
 
       //Error code
@@ -150,7 +152,7 @@ Geocoder.prototype.code = function(row,cb) {
         row[this.options.latColumn] = "";
         row[this.options.lngColumn] = "";
 
-        this.emit("err",result);
+        this.emit("failure",result);
 
       //Success
       } else if ("lat" in result && "lng" in result) {
@@ -160,11 +162,12 @@ Geocoder.prototype.code = function(row,cb) {
 
         //Cache the result
         this.cache[row[this.options.addressColumn]] = result;
+        this.emit("success",row[this.options.addressColumn]);
 
       //Unknown extraction error
       } else {
 
-        this.emit("err","Unknown error: couldn't extract result from response body:\n\n"+body);
+        this.emit("failure","[ERROR] Invalid return value from handler for response body: "+body);
 
       }
 
@@ -183,7 +186,7 @@ Geocoder.prototype.end = function(err,results){
     return !d;
   }).length;
 
-  this.emit("end",{
+  this.emit("complete",{
     failures: failures,
     successes: results.length - failures,
     time: prettyTime((new Date()).getTime() - this.time)
@@ -201,12 +204,12 @@ function googleHandler(body,address) {
 
   //Error code, return a string
   if (response.status !== "OK") {
-    return address+": "response.status;
+    return "[ERROR] "+response.status;
   }
 
   //No match, return a string
   if (!response.results || !response.results.length) {
-    return address+": NO MATCH";
+    return "[NO MATCH] "+address;
   }
 
   //Success, return a lat/lng object

@@ -1,5 +1,5 @@
-Geode
-=====
+geocode-csv
+===========
 
 Bulk geocode addresses in a CSV with one line of code (OK, two lines of code).
 
@@ -10,21 +10,21 @@ The defaults are configured to use Google's geocoder but can be configured to wo
 Install via `npm`:
 
 ```
-npm install geode
+npm install geocode-csv
 ````
 
 ## Basic Usage
 
 ```js
-var geode = require("geode");
+var geocode = require("geocode-csv");
 
 //Write a new CSV with lat/lng columns added
-geode("path/to/input.csv","path/to/output.csv");
+geocode("path/to/input.csv","path/to/output.csv");
 ```
 
 ## A Little More
 
-### geode(input,output,options)
+### geocode(input[,output][,options])
 
 You must specify an `input` filename as the first argument.
 
@@ -35,18 +35,18 @@ You can specify `options` to override the defaults (see below).
 ```js
 
 //Write to a file with default options
-geode("input.csv","output.csv");
+geocode("input.csv","output.csv");
 
 //Write to a file with some custom options
-geode("input.csv","output.csv",{
+geocode("input.csv","output.csv",{
    addressColumn: "MY_ADDRESS_COLUMN"
 });
 
 //Stream to stdout with default options
-geode("input.csv");
+geocode("input.csv");
 
 //Stream to stdout with some custom options
-geode("input.csv",{
+geocode("input.csv",{
   headerRow: false
 });
 
@@ -92,7 +92,7 @@ The number of milliseconds to wait between geocoding calls.  Setting this to 0 m
 
 A function that takes the entire body of a geocoding service response and return either a string error message if there was an error, or an object with `lat` and `lng` properties if it was successful.
 
-**Default:** The default `handler` function is written to handle Google Geocoding API responses:
+**Default:** The default `handler` function is written to handle [Google Geocoding API V3](https://developers.google.com/maps/documentation/geocoding/) responses:
 
 ```js
 
@@ -102,12 +102,12 @@ function googleHandler(body,address) {
 
   //Error code, return a string
   if (response.status !== "OK") {
-    return address+": "response.status;
+    return "[ERROR] "+response.status;
   }
 
   //No match, return a string
   if (!response.results || !response.results.length) {
-    return address+": NO MATCH";
+    return "[NO MATCH] "+address;
   }
 
   //Success, return a lat/lng object
@@ -125,26 +125,30 @@ Set to `true` if you want to re-geocode every row even if an existing lat/lng is
 
 ## Events
 
-While the geocoder is running, it will emit two events: `err` and `end`.
+While the geocoder is running, it will emit three events: `success`, `failure` and `complete`.
 
-`err` is emitted whenever a row in the input CSV fails to geocode.
+`success` is emitted whenever a row in the input CSV successfully geocodes.
 
-`end` is emitted when all rows are done, and includes a summary object with `failures`, `successes`, and `time` properties.
+`failure` is emitted whenever a row in the input CSV fails to geocode.
+
+`complete` is emitted when all rows are done, and includes a summary object with `failures`, `successes`, and `time` properties.
 
 ```js
 geocoder("input.csv","output.csv")
-  .on("err",function(err){
+  .on("success",function(address){
+    //Triggered every time a row successfully geocodes
+  })
+  .on("failure",function(err){
     //Triggered every time a row fails to geocode
     console.warn(err);
   })
-  .on("end",function(summary){
+  .on("complete",function(summary){
     console.log(summary);
   });
 
 /*
-
-123 FICTIONAL STREET: NO MATCH
-99 MISFORMATTED ADDRESS, USA: NO MATCH
+[NO MATCH] 123 FICTIONAL STREET
+[NO MATCH] 99 MISFORMATTED ADDRESS, USA
 {
   'failures': 2, //2 rows failed
   'successes': 80 //80 rows succeeded,
@@ -170,9 +174,9 @@ function mapboxHandler(body,address) {
 
   //Error, return a string
   if (response.features === undefined) {
-    return address+": "+response.message;
+    return "[ERROR] "+response.message;
   } else if (!response.features.length) {
-    return address+": NO MATCH";
+    return "[NO MATCH] "+address;
   }
 
   //Success, return a lat/lng object

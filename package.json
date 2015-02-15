@@ -1,5 +1,5 @@
 {
-  "name": "address-book",
+  "name": "geocode-csv",
   "version": "0.0.1",
   "description": "Bulk geocode addresses in a CSV.",
   "main": "src/index.js",
@@ -22,7 +22,7 @@
   "author": "Noah Veltman (@veltman)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/veltman/address-book/issues"
+    "url": "https://github.com/veltman/geocode-csv/issues"
   },
-  "homepage": "https://github.com/veltman/address-book"
+  "homepage": "https://github.com/veltman/geocode-csv"
 }
