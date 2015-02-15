@@ -96,18 +96,18 @@ A function that takes the entire body of a geocoding service response and return
 
 ```js
 
-function googleHandler(body) {
+function googleHandler(body,address) {
 
   var response = JSON.parse(body);
 
   //Error code, return a string
   if (response.status !== "OK") {
-    return response.status;
+    return address+": "response.status;
   }
 
-  //No results, return the string "NO MATCH"
+  //No match, return a string
   if (!response.results || !response.results.length) {
-    return "NO MATCH";
+    return address+": NO MATCH";
   }
 
   //Success, return a lat/lng object
@@ -142,8 +142,9 @@ geocoder("input.csv","output.csv")
   });
 
 /*
-NO MATCH FOR 123 FICTIONAL STREET
-NO MATCH FOR 99 MISFORMATTED ADDRESS, USA
+
+123 FICTIONAL STREET: NO MATCH
+99 MISFORMATTED ADDRESS, USA: NO MATCH
 {
   'failures': 2, //2 rows failed
   'successes': 80 //80 rows succeeded,
@@ -163,15 +164,15 @@ geocode("input.csv","output.csv",{
   "handler": mapboxHandler
 });
 
-function mapboxHandler(body) {
+function mapboxHandler(body,address) {
 
   var response = JSON.parse(body);
 
   //Error, return a string
   if (response.features === undefined) {
-    return response.message;
+    return address+": "+response.message;
   } else if (!response.features.length) {
-    return "NO MATCH";
+    return address+": NO MATCH";
   }
 
   //Success, return a lat/lng object

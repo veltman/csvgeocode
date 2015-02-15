@@ -127,7 +127,7 @@ Geocoder.prototype.code = function(row,cb) {
 
     var result;
 
-    //HTTP error
+    //Some other error
     if (err) {
 
       this.emit("err",err);
@@ -139,7 +139,7 @@ Geocoder.prototype.code = function(row,cb) {
     } else {
 
       try {
-        result = this.options.handler(body);
+        result = this.options.handler(body,row[this.options.addressColumn]);
       } catch(e) {
         this.emit("err",e);
       }
@@ -195,21 +195,21 @@ function prettyTime(ms) {
   return (Math.round(ms/100)/10) + "s";
 }
 
-function googleHandler(body) {
+function googleHandler(body,address) {
 
   var response = JSON.parse(body);
 
-  //Error code
+  //Error code, return a string
   if (response.status !== "OK") {
-    return response.status;
+    return address+": "response.status;
   }
 
-  //No results
+  //No match, return a string
   if (!response.results || !response.results.length) {
-    return "NO MATCH";
+    return address+": NO MATCH";
   }
 
-  //Success
+  //Success, return a lat/lng object
   return response.results[0].geometry.location;
 
 }
