@@ -72,13 +72,13 @@ The name of the column that contains the address to geocode.  This must exist in
 
 #### `latColumn`
 
-The name of the column that should contain the resulting latitude.  If this column, doesn't exist in the input CSV, it will be created in the output.  Any rows in the input CSV that already have valid latitudes won't be geocoded again.
+The name of the column that should contain the resulting latitude.  If this column doesn't exist in the input CSV, it will be created in the output.  Any rows in the input CSV that already have valid latitudes won't be geocoded again.
 
 **Default:** Automatically detects if there is a relevant column name like `lat` or `latitude`.  If none exists, uses `lat`.
 
 #### `lngColumn`
 
-The name of the column that should contain the resulting longitude.  If this column, doesn't exist in the input CSV, it will be created in the output.  Any rows in the input CSV that already have valid longitudes won't be geocoded again.
+The name of the column that should contain the resulting longitude.  If this column doesn't exist in the input CSV, it will be created in the output.  Any rows in the input CSV that already have valid longitudes won't be geocoded again.
 
 **Default:** Automatically detects if there is a relevant column name like `lng` or `longitude`.  If none exists, uses `lng`.
 
