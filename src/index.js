@@ -8,12 +8,11 @@ var fs = require("fs"),
     EventEmitter = require("events").EventEmitter;
 
 var defaults = {
-  "verbose": false,
   "url": "https://maps.googleapis.com/maps/api/geocode/json?address={{a}}",
   "latColumn": null,
   "lngColumn": null,
   "addressColumn": null,
-  "timeout": 250,
+  "delay": 250,
   "force": false,
   "handler": googleHandler
 };
@@ -52,7 +51,9 @@ var Geocoder = function(input,output,options) {
   this.output = output;
   this.options = options;
 
+  //TO DO: allow more concurrency?
   this.queue = queue(1);
+
   this.cache = {}; //Cached results by address
 
 };
@@ -85,19 +86,19 @@ Geocoder.prototype.run = function() {
 
       }
 
-      this.queue.defer(this.code.bind(this),row);
+      this.queue.defer(this.codeRow.bind(this),row);
 
 
     }.bind(this))
     .on("end",function(){
-      this.queue.awaitAll(this.end.bind(this));
+      this.queue.awaitAll(this.complete.bind(this));
     }.bind(this));
 
   return this;
 
 }
 
-Geocoder.prototype.code = function(row,cb) {
+Geocoder.prototype.codeRow = function(row,cb) {
 
   var cbgb = function(){
     return cb(null,!!(row.lat && row.lng));
@@ -174,14 +175,14 @@ Geocoder.prototype.code = function(row,cb) {
     }
 
     return this.formatter.write(row,function(){
-      setTimeout(cbgb,this.options.timeout);
+      setTimeout(cbgb,this.options.delay);
     }.bind(this));
 
   }.bind(this));
 
 };
 
-Geocoder.prototype.end = function(err,results){
+Geocoder.prototype.complete = function(err,results){
   var failures = results.filter(function(d){
     return !d;
   }).length;

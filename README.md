@@ -47,7 +47,7 @@ geocode("input.csv");
 
 //Stream to stdout with some custom options
 geocode("input.csv",{
-  headerRow: false
+  delay: 500 //wait 500ms between geocoding calls
 });
 
 ```
@@ -82,7 +82,7 @@ The name of the column that should contain the resulting longitude.  If this col
 
 **Default:** Automatically detects if there is a relevant column name like `lng` or `longitude`.  If none exists, uses `lng`.
 
-#### `timeout`
+#### `delay`
 
 The number of milliseconds to wait between geocoding calls.  Setting this to 0 may result in most calls failing because of API throttling.  Space your requests out a little.  Let 'em breathe.
 
