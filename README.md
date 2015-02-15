@@ -38,13 +38,17 @@ You can specify `options` to override the defaults (see below).
 geode("input.csv","output.csv");
 
 //Write to a file with some custom options
-geode("input.csv","output.csv",{addressColumn:"MY_ADDRESS_COLUMN"});
+geode("input.csv","output.csv",{
+   addressColumn: "MY_ADDRESS_COLUMN"
+});
 
 //Stream to stdout with default options
 geode("input.csv");
 
 //Stream to stdout with some custom options
-geode("input.csv",{headerRow:false});
+geode("input.csv",{
+  headerRow: false
+});
 
 ```
 
@@ -54,9 +58,9 @@ The following options are available:
 
 #### `url`
 
-The base URL that each address will be appended to for geocoding.
+The URL template to use for geocoding.  The placeholder `{{a}}` will be replaced by each individual address.
 
-**Default:** `https://maps.googleapis.com/maps/api/geocode/json?address=`
+**Default:** `https://maps.googleapis.com/maps/api/geocode/json?address={{a}}`
 
 **Default:** `true`
 
@@ -88,7 +92,7 @@ The number of milliseconds to wait between geocoding calls.  Setting this to 0 m
 
 A function that takes the entire body of a geocoding service response and return either a string error message if there was an error, or an object with `lat` and `lng` properties if it was successful.
 
-**Default:** The default `handler` function is written to handle Google Geocoder responses:
+**Default:** The default `handler` function is written to handle Google Geocoding API responses:
 
 ```js
 
@@ -106,19 +110,78 @@ function googleHandler(body) {
     return "NO MATCH";
   }
 
-  //Success, return a {lat: y, lng: x} object
+  //Success, return a lat/lng object
   return response.results[0].geometry.location;
 
 }
 
 ```
 
+#### `force`
 
-#### `verbose`
-
-Set to `true` to get error messages when geocodes fail. 
+Set to `true` if you want to re-geocode every row even if an existing lat/lng is detected.
 
 **Default:** `false`
+
+## Events
+
+While the geocoder is running, it will emit two events: `err` and `end`.
+
+`err` is emitted whenever a row in the input CSV fails to geocode.
+
+`end` is emitted when all rows are done, and includes a summary object with `failures`, `successes`, and `time` properties.
+
+```js
+geocoder("input.csv","output.csv")
+  .on("err",function(err){
+    //Triggered every time a row fails to geocode
+    console.warn(err);
+  })
+  .on("end",function(summary){
+    console.log(summary);
+  });
+
+/*
+NO MATCH FOR 123 FICTIONAL STREET
+NO MATCH FOR 99 MISFORMATTED ADDRESS, USA
+{
+  'failures': 2, //2 rows failed
+  'successes': 80 //80 rows succeeded,
+  'time': '15.4s' //took 15.4 seconds
+}
+*/
+
+```
+
+## Using a different geocoder
+
+The default values for `url` and `handler` are configured to work with Google's Geocoding API.  To use a different geocoding service, supply different values for those two options.  For example, if you want to use Mapbox's geocoding API:
+
+```js
+geocode("input.csv","output.csv",{
+  "url": "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token=MY_API_KEY",
+  "handler": mapboxHandler
+});
+
+function mapboxHandler(body) {
+
+  var response = JSON.parse(body);
+
+  //Error, return a string
+  if (response.features === undefined) {
+    return response.message;
+  } else if (!response.features.length) {
+    return "NO MATCH";
+  }
+
+  //Success, return a lat/lng object
+  return {
+    lat: response.features[0].center[1],
+    lng: response.features[0].center[0]
+  };
+
+}
+```
 
 ## Notes
 

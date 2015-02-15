@@ -3,11 +3,13 @@ var fs = require("fs"),
     parse = require("csv-parse"),
     format = require("csv-stringify"),
     queue = require("queue-async"),
-    extend = require("extend");
+    extend = require("extend"),
+    util = require("util"),
+    EventEmitter = require("events").EventEmitter;
 
 var defaults = {
   "verbose": false,
-  "url": "https://maps.googleapis.com/maps/api/geocode/json?address=",
+  "url": "https://maps.googleapis.com/maps/api/geocode/json?address={{a}}",
   "latColumn": null,
   "lngColumn": null,
   "addressColumn": null,
@@ -16,12 +18,11 @@ var defaults = {
   "handler": googleHandler
 };
 
-module.exports = function(inFile,outFile,userOptions,onEnd) {
+module.exports = generate;
 
-  var addressCache = {}, //Cached results by address
-      q = queue(1),
-      formatter = format({ header: true }),
-      input = fs.createReadStream(inFile),
+function generate(inFile,outFile,userOptions) {
+
+  var input = fs.createReadStream(inFile),
       output = process.stdout,
       options = {};
 
@@ -39,101 +40,160 @@ module.exports = function(inFile,outFile,userOptions,onEnd) {
   //Default options
   options = extend(defaults,options);
 
-  formatter.pipe(output);
+  var geocoder = new Geocoder(input,output,options);
+
+  return geocoder.run();
+
+};
+
+var Geocoder = function(input,output,options) {
+
+  this.input = input;
+  this.output = output;
+  this.options = options;
+
+  this.queue = queue(1);
+  this.cache = {}; //Cached results by address
+
+};
+
+util.inherits(Geocoder, EventEmitter);
+
+Geocoder.prototype.run = function() {
+
+  this.formatter = format({ header: true });
+  this.parser = parse({ columns: true });
+  this.time = (new Date()).getTime();
+
+  this.formatter.pipe(this.output);
 
   //extend options with defaults
-  input.pipe(parse({ columns: true }))
+  this.input.pipe(this.parser)
     .on("data",function(row){
+
+      this.emit("data",row);
 
       //If there are unset column names,
       //try to discover them on the first data row
-      if (options.latColumn === null || options.lngColumn === null || options.addressColumn === null) {
-        options = discover(options,row);
+      if (this.options.latColumn === null || this.options.lngColumn === null || this.options.addressColumn === null) {
+
+        this.options = discover(this.options,row);
+
+        if (this.options.addressColumn === null) {
+          this.emit("err","Couldn't auto-detect address column.");
+        }
+
       }
 
-      q.defer(geocode,row);
+      this.queue.defer(this.code.bind(this),row);
 
 
-    })
+    }.bind(this))
     .on("end",function(){
-      q.awaitAll(done);
-    });
+      this.queue.awaitAll(this.end.bind(this));
+    }.bind(this));
 
-    function geocode(row,cb) {
+  return this;
 
-      var cbgb = function(){
-        return cb(null,!!(row.lat && row.lng));
-      };
+}
 
-      //Supplied address column doesn't exist
-      if (row[options.addressColumn] === undefined) {
-        throw new Error("Couldn't find address column '"+options.addressColumn+"'");
+Geocoder.prototype.code = function(row,cb) {
+
+  var cbgb = function(){
+    return cb(null,!!(row.lat && row.lng));
+  };
+
+  if (row[this.options.addressColumn] === undefined) {
+    this.emit("err","Couldn't find address column '"+this.options.addressColumn+"'");
+    return this.formatter.write(row,cbgb);
+  }
+
+  //Doesn't need geocoding
+  if (!this.options.force && numeric(row[this.options.latColumn]) && numeric(row[this.options.lngColumn])) {
+    return this.formatter.write(row,cbgb);
+  }
+
+  //Address is cached from a previous result
+  if (this.cache[row[this.options.addressColumn]]) {
+
+    row[this.options.latColumn] = this.cache[row[this.options.addressColumn]].lat;
+    row[this.options.lngColumn] = this.cache[row[this.options.addressColumn]].lng;
+
+    return this.formatter.write(row,cbgb);
+
+  }
+
+  request.get(this.options.url.replace("{{a}}",escaped(row[this.options.addressColumn])),function(err,response,body){
+
+    var result;
+
+    //HTTP error
+    if (err) {
+
+      this.emit("err",err);
+
+    } else if (response.statusCode !== 200) {
+
+      this.emit("err","HTTP Status: "+response.statusCode);
+
+    } else {
+
+      try {
+        result = this.options.handler(body);
+      } catch(e) {
+        this.emit("err",e);
       }
 
-      //Doesn't need geocoding
-      if (!options.force && numeric(row[options.latColumn]) && numeric(row[options.lngColumn])) {
-        return formatter.write(row,cbgb);
+      //Error code
+      if (typeof result === "string") {
+
+        row[this.options.latColumn] = "";
+        row[this.options.lngColumn] = "";
+
+        this.emit("err",result);
+
+      //Success
+      } else if ("lat" in result && "lng" in result) {
+
+        row[this.options.latColumn] = result.lat;
+        row[this.options.lngColumn] = result.lng;
+
+        //Cache the result
+        this.cache[row[this.options.addressColumn]] = result;
+
+      //Unknown extraction error
+      } else {
+
+        this.emit("err","Unknown error: couldn't extract result from response body:\n\n"+body);
+
       }
-
-      //Address is cached from a previous result
-      if (addressCache[row[options.addressColumn]]) {
-
-        row[options.latColumn] = addressCache[row[options.addressColumn]].lat;
-        row[options.lngColumn] = addressCache[row[options.addressColumn]].lng;
-
-        return formatter.write(row,cbgb);
-
-      }
-
-      request.get(options.url+escaped(row[options.addressColumn]),function(err,response,body){
-
-        var result;
-
-        //Unknown HTTP error code
-        if (err) {
-          /* EMIT ERROR */
-          throw new Error(err);
-        }
-
-        result = options.handler(body);
-
-        if (typeof result === "string") {
-
-          row[options.latColumn] = "";
-          row[options.lngColumn] = "";
-
-          /*
-          EMIT ERROR
-          if (options.verbose) {
-            console.warn("FAILED: "+row[options.addressColumn]+" ("+result+")");
-          }*/
-
-        } else if ("lat" in result && "lng" in result) {
-
-          row[options.latColumn] = result.lat;
-          row[options.lngColumn] = result.lng;
-
-          //Cache the result
-          addressCache[row[options.addressColumn]] = result;
-
-        } else {
-          /* EMIT ERROR */
-          throw new Error("Unknown error: couldn't extract result from response body:\n\n"+body);
-        }
-
-        return formatter.write(row,function(){
-          setTimeout(cbgb,options.timeout);
-        });
-
-      });
 
     }
 
-    function done(err,results) {
-      console.log("DONE",err,results);
-    }
+    return this.formatter.write(row,function(){
+      setTimeout(cbgb,this.options.timeout);
+    }.bind(this));
+
+  }.bind(this));
 
 };
+
+Geocoder.prototype.end = function(err,results){
+  var failures = results.filter(function(d){
+    return !d;
+  }).length;
+
+  this.emit("end",{
+    failures: failures,
+    successes: results.length - failures,
+    time: prettyTime((new Date()).getTime() - this.time)
+  });
+
+}
+
+function prettyTime(ms) {
+  return (Math.round(ms/100)/10) + "s";
+}
 
 function googleHandler(body) {
 
@@ -154,7 +214,7 @@ function googleHandler(body) {
 
 }
 
-//Is numeric?
+//Is it numeric and between -180 and +180?
 function numeric(number) {
   return !Array.isArray(number) && (number - parseFloat(number) + 1) >= 0 && number >= -180 && number <= 180;
 }
@@ -188,10 +248,6 @@ function discover(options,row) {
 
   if (options.lngColumn === null) {
     options.lngColumn = "lng";
-  }
-
-  if (options.addressColumn === null) {
-    throw new Error("Couldn't auto-detect address column.");
   }
 
   return options;
