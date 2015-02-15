@@ -186,7 +186,7 @@ function mapboxHandler(body,address) {
 
 ## Notes
 
-Geocoding a long list of unsanitized addresses rarely goes perfectly the first time.  Using this module, any addresses that don't succeed will have their lat/lng columns left blank.  If you set `verbose: true` you can get a full list of failed addresses at the end.
+Geocoding a long list of unsanitized addresses rarely goes perfectly the first time.  Using this module, any addresses that don't succeed will have their lat/lng columns left blank.  By listening for the `err` event, you can figure out which ones failed and run the result through multiple times without re-geocoding the whole list.
 
 ## To Do
 
