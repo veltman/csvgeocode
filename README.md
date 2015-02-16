@@ -198,30 +198,9 @@ $ csvgeocode input.csv output.csv --force
 
 #### `handler`
 
-A function that takes the entire body of a geocoding service response and return either a string error message if there was an error, or an object with `lat` and `lng` properties if it was successful.
+A function that takes the entire body of a geocoding service response and return either a string error message if there was an error, or an object with `lat` and `lng` properties if it was successful.  See "Using a different geocoder" below if you're going to use one besides Google.
 
-**Default:** The default `handler` function is written to handle [Google Geocoding API V3](https://developers.google.com/maps/documentation/geocoding/) responses:
-
-```js
-
-function googleHandler(body,address) {
-
-  var response = JSON.parse(body);
-
-  //Error code, return a string
-  if (response.status !== "OK") {
-    return "[ERROR] "+response.status;
-  }
-
-  //No match, return a string
-  if (!response.results || !response.results.length) {
-    return "[NO MATCH] "+address;
-  }
-
-  //Success, return a lat/lng object
-  return response.results[0].geometry.location;
-
-}
+**Default:** The default `handler` function is written to handle [Google Geocoding API V3](https://developers.google.com/maps/documentation/geocoding/) responses.
 
 ```
 
@@ -235,13 +214,15 @@ While the geocoder is running, it will emit three events: `success`, `failure` a
 
 `complete` is emitted when all rows are done, and includes a summary object with `failures`, `successes`, and `time` properties.
 
+You can listen to any of these events to monitor progress or trigger other events as needed.
+
 ```js
 csvgeocoder("input.csv","output.csv")
   .on("failure",function(error){
-    //do something with the error message
+    //An address failed, there's an error message
   })
   .on("success",function(address){
-    //Address was successfully geocoded
+    //An address was successfully geocoded
   })
   .on("complete",function(summary){
     /*
@@ -288,7 +269,7 @@ function mapboxHandler(body,address) {
 
 ## Notes
 
-Geocoding a long list of unsanitized addresses rarely goes perfectly the first time.  Using this module, any addresses that don't succeed will have their lat/lng columns left blank.  By listening for the `err` event, you can figure out which ones failed and run the result through multiple times without re-geocoding the whole list.
+Geocoding a long list of unsanitized addresses rarely goes perfectly the first time.  Using csvgeocove, any addresses that don't succeed will have their lat/lng columns left blank.  By listening for the `failure` event (or just browsing the results), you can figure out which ones failed and edit them as needed.  Then you can run the result back through and only the failed rows will get re-geocoded.
 
 ## To Do
 
