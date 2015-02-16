@@ -13,7 +13,15 @@ Install via `npm`:
 npm install csvgeocode
 ````
 
+To use the command line version, install it globally:
+
+```
+npm install -g csvgeocode
+```
+
 ## Basic Usage
+
+In a script, use it like this:
 
 ```js
 var csvgeocode = require("csvgeocode");
@@ -22,12 +30,11 @@ var csvgeocode = require("csvgeocode");
 csvgeocode("path/to/input.csv","path/to/output.csv");
 ```
 
-## Command line usage
-
-Install it globally:
+From the command line, use it like this:
 
 ```
-npm install -g csvgeocode
+$ csvgeocode path/to/input.csv path/to/output.csv
+```
 
 ## A Little More
 
@@ -46,7 +53,7 @@ csvgeocode("input.csv","output.csv");
 
 //Write to a file with some custom options
 csvgeocode("input.csv","output.csv",{
-   addressColumn: "MY_ADDRESS_COLUMN"
+   address: "MY_ADDRESS_COLUMN_NAME"
 });
 
 //Stream to stdout with default options
@@ -59,6 +66,11 @@ csvgeocode("input.csv",{
 
 ```
 
+You can supply all the same options to the command line version:
+
+```
+$ csvgeocode /path/to/input.csv /path/to/output.csv --delay 500 --address MY_ADDRESS_COLUMN_NAME
+
 ## Options
 
 The following options are available:
@@ -69,31 +81,119 @@ The URL template to use for geocoding.  The placeholder `{{a}}` will be replaced
 
 **Default:** `https://maps.googleapis.com/maps/api/geocode/json?address={{a}}`
 
-**Default:** `true`
+In a script:
 
-#### `addressColumn`
+```
+csvgeocode("input.csv","output.csv",{
+  url: "http://myspecialgeocoder.com/?address={{a}}"
+})
+```
+
+From the command line:
+
+```
+$ csvgeocode input.csv output.csv --url "http://myspecialgeocoder.com/?address={{a}}"
+```
+
+#### `address`
 
 The name of the column that contains the address to geocode.  This must exist in the CSV.
 
 **Default:** Automatically detects if there is a relevant column name like `address` or `street_address`.
 
-#### `latColumn`
+In a script:
+
+```
+csvgeocode("input.csv","output.csv",{
+  address: "MY_ADDRESS_COLUMN_HAS_THIS_DUMB_NAME"
+})
+```
+
+From the command line:
+
+```
+$ csvgeocode input.csv output.csv --address MY_ADDRESS_COLUMN_HAS_THIS_DUMB_NAME
+```
+
+#### `lat`
 
 The name of the column that should contain the resulting latitude.  If this column doesn't exist in the input CSV, it will be created in the output.
 
 **Default:** Automatically detects if there is a relevant column name like `lat` or `latitude`.  If none exists, uses `lat`.
 
-#### `lngColumn`
+In a script:
+
+```
+csvgeocode("input.csv","output.csv",{
+  lat: "MY_LATITUDE_COLUMN"
+})
+```
+
+From the command line:
+
+```
+$ csvgeocode input.csv output.csv --lat MY_LATITUDE_COLUMN
+```
+
+#### `lng`
 
 The name of the column that should contain the resulting longitude.  If this column doesn't exist in the input CSV, it will be created in the output.
 
 **Default:** Automatically detects if there is a relevant column name like `lng` or `longitude`.  If none exists, uses `lng`.
+
+In a script:
+
+```
+csvgeocode("input.csv","output.csv",{
+  lng: "MY_LONGITUDE_COLUMN"
+})
+```
+
+From the command line:
+
+```
+$ csvgeocode input.csv output.csv --lng MY_LONGITUDE_COLUMN
+```
 
 #### `delay`
 
 The number of milliseconds to wait between geocoding calls.  Setting this to 0 may result in most calls failing because of API throttling.  Space your requests out a little.  Let 'em breathe.
 
 **Default:** `250`
+
+In a script:
+
+```
+csvgeocode("input.csv","output.csv",{
+  delay: 1000
+})
+```
+
+From the command line:
+
+```
+$ csvgeocode input.csv output.csv --delay 1000
+```
+
+#### `force`
+
+Set to `true` if you want to re-geocode every row even if an existing lat/lng is detected.  Setting this to true means you'll hit API limits faster.
+
+**Default:** `false`
+
+In a script:
+
+```
+csvgeocode("input.csv","output.csv",{
+  force: true
+})
+```
+
+From the command line:
+
+```
+$ csvgeocode input.csv output.csv --force
+```
 
 #### `handler`
 
@@ -123,12 +223,6 @@ function googleHandler(body,address) {
 }
 
 ```
-
-#### `force`
-
-Set to `true` if you want to re-geocode every row even if an existing lat/lng is detected.
-
-**Default:** `false`
 
 ## Events
 
