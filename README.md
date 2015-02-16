@@ -63,6 +63,8 @@ csvgeocode("input.csv","output.csv",{
 
 ## Options
 
+The following options are available.  NONE ARE REQUIRED.
+
 #### `address`
 
 The name of the column that contains the address to geocode.  This column must exist in the input CSV.
