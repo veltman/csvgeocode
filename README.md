@@ -163,7 +163,7 @@ $ csvgeocode input.csv -output.csv --url "https://maps.googleapis.com/maps/api/g
 
 #### `handler`
 
-What handler function to return a lat/lng from the geocoding response body.  Acceptable values are `"google"` or a custom handler function for a geocoding API response.
+What handler function to use with the geocoding API response.  Acceptable values are `"google"` or a custom handler function.
 
 A custom handler function will get two arguments: the response body and the address being geocoded.  It should return an object with `lat` and `lng` properties when successful.  Otherwise it should return a string error message.  For details, see "Using a different geocoder" below.
 
