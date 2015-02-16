@@ -84,7 +84,7 @@ The URL template to use for geocoding.  The placeholder `{{a}}` will be replaced
 
 In a script:
 
-```
+```js
 csvgeocode("input.csv","output.csv",{
   url: "http://myspecialgeocoder.com/?address={{a}}"
 })
@@ -104,7 +104,7 @@ The name of the column that contains the address to geocode.  This must exist in
 
 In a script:
 
-```
+```js
 csvgeocode("input.csv","output.csv",{
   address: "MY_ADDRESS_COLUMN_HAS_THIS_DUMB_NAME"
 })
@@ -124,7 +124,7 @@ The name of the column that should contain the resulting latitude.  If this colu
 
 In a script:
 
-```
+```js
 csvgeocode("input.csv","output.csv",{
   lat: "MY_LATITUDE_COLUMN"
 })
@@ -144,7 +144,7 @@ The name of the column that should contain the resulting longitude.  If this col
 
 In a script:
 
-```
+```js
 csvgeocode("input.csv","output.csv",{
   lng: "MY_LONGITUDE_COLUMN"
 })
@@ -164,7 +164,7 @@ The number of milliseconds to wait between geocoding calls.  Setting this to 0 i
 
 In a script:
 
-```
+```js
 csvgeocode("input.csv","output.csv",{
   delay: 1000
 })
@@ -184,7 +184,7 @@ Set to `true` if you want to re-geocode every row even if an existing lat/lng is
 
 In a script:
 
-```
+```js
 csvgeocode("input.csv","output.csv",{
   force: true
 })
@@ -198,11 +198,38 @@ $ csvgeocode input.csv output.csv --force
 
 #### `handler`
 
-A function that takes the entire body of a geocoding service response and return either a string error message if there was an error, or an object with `lat` and `lng` properties if it was successful.  See "Using a different geocoder" below if you're going to use one besides Google.
+Acceptable values are "google", "mapbox", or a custom handler function for a geocoding API response. A custom handler function will get two arguments: the response body and the address being geocoded.  It should return an object with `lat` and `lng` properties when successful.  Otherwise it should return a string error message, which will be passed to the `failure` event (see below).
 
-**Default:** The default `handler` function is written to handle [Google Geocoding API V3](https://developers.google.com/maps/documentation/geocoding/) responses.
+**Default:** "google"
 
-```
+Writing your own:
+
+```js
+csvgeocode("input.csv","output.csv",{
+  url: "http://myspecialgeocoder.com?q={{a}}",
+  handler: mySpecialHandler
+});
+
+function mySpecialHandler(body,address) {
+
+  var parsed = JSON.parse(body);
+
+  //Error, return a string
+  if (parsed.error) {
+    return "Some sort of error message.";
+  }
+
+  //No match, return a string
+  if (parsed.results.length === 0) {
+    return "No results for: "+address;
+  }
+
+  return {
+    lat: parsed.results[0].lat,
+    lng: parsed.results[0].lng
+  };
+}
+
 
 ## Events
 
