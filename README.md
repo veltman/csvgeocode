@@ -292,11 +292,8 @@ Geocoding a long list of unsanitized addresses rarely goes perfectly the first t
 
 ## To Do
 
-* Fix the `verbose` option to also give you a summary report (this is currently broken for async reasons).
-* Currently pauses/resumes the stream to enforce delays between geocoding calls. There is probably a smarter way to queue/throttle those.
 * Support a CSV with no header row where `latColumn`, `lngColumn`, and `addressColumn` are numerical indices instead of column names.
 * Make `bounds` a separate option rather than something you have to hardcore into the URL.
-* Support non-Google geocoders with the option of a custom `processor` function.
 * Support both POST and GET requests somehow.
 
 ## Credits/License
