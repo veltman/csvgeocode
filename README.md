@@ -198,11 +198,11 @@ $ csvgeocode input.csv output.csv --force
 
 #### `handler`
 
-Acceptable values are "google", "mapbox", or a custom handler function for a geocoding API response. A custom handler function will get two arguments: the response body and the address being geocoded.  It should return an object with `lat` and `lng` properties when successful.  Otherwise it should return a string error message, which will be passed to the `failure` event (see below).
+Acceptable values are `"google"`, `"mapbox"`, or a custom handler function for a geocoding API response. A custom handler function will get two arguments: the response body and the address being geocoded.  It should return an object with `lat` and `lng` properties when successful.  Otherwise it should return a string error message, which will be passed to the `failure` event (see below).
 
 **Default:** "google"
 
-Writing your own:
+Writing your own could look something like this:
 
 ```js
 csvgeocode("input.csv","output.csv",{
