@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+
+var path = require("path"),
+    yargs = require("yargs")
+    .usage("Usage: geocode [options] [input CSV] [output CSV]")
+    .describe("lat","Latitude column name. Default: automatic detection")
+    .describe("lng","Longitude column name. Default: automatic detection")
+    .describe("address","Address column name. Default: automatic detection")
+    .describe("url","URL template for geocoding API with {{a}} as the address placeholder. Default: https://maps.googleapis.com/maps/api/geocode/json?address={{a}}")
+    .describe("delay","Milliseconds to wait between API calls. Default: 250")
+    .describe("force","Re-geocode every row even if a lat/lng already exists.")
+    .describe("help","Show this message.")
+    .boolean(["force","help"])
+    .string(["_","lat","lng","address","url"])
+    .demand(1)
+    .check(function(argv) {
+
+      if (argv.help) return;
+      if ("delay" in argv && isNaN(Number(arg))) {
+        throw new Error("--delay requires a numeric value in milliseconds.");
+      }
+
+      return true;
+
+    }),
+    args = yargs.argv,
+    geocode = require("../")
+    options = require("../src/defaults");
+
+if (args.help) {
+  return yargs.showHelp();
+}
+
+for (var key in options) {
+  if (key in args) {
+    options[key] = args[key];
+  }
+}
+
+//They specified an output file
+if (args._.length > 1) {
+  geocode(args._[0],args._[1],options)
+    .on("failure",function(err){
+      console.log(err);
+    })
+    .on("complete",function(summary){
+      console.log("Rows geocoded: "+summary.successes+"\n"+
+                  "Rows failed: "+summary.failures+"\n"+
+                  "Time elapsed: "+(Math.round(summary.time/100)/10)+" seconds");
+    });
+//No output file, use stdout
+} else {
+  geocode(args._[0],options);
+}

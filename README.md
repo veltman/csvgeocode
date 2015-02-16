@@ -1,5 +1,5 @@
-geocode-csv
-===========
+csvgeocode
+==========
 
 Bulk geocode addresses in a CSV with one line of code (OK, two lines of code).
 
@@ -10,21 +10,28 @@ The defaults are configured to use Google's geocoder but can be configured to wo
 Install via `npm`:
 
 ```
-npm install geocode-csv
+npm install csvgeocode
 ````
 
 ## Basic Usage
 
 ```js
-var geocode = require("geocode-csv");
+var csvgeocode = require("csvgeocode");
 
 //Write a new CSV with lat/lng columns added
-geocode("path/to/input.csv","path/to/output.csv");
+csvgeocode("path/to/input.csv","path/to/output.csv");
 ```
+
+## Command line usage
+
+Install it globally:
+
+```
+npm install -g csvgeocode
 
 ## A Little More
 
-### geocode(input[,output][,options])
+### csvgeocode(input[,output][,options])
 
 You must specify an `input` filename as the first argument.
 
@@ -35,18 +42,18 @@ You can specify `options` to override the defaults (see below).
 ```js
 
 //Write to a file with default options
-geocode("input.csv","output.csv");
+csvgeocode("input.csv","output.csv");
 
 //Write to a file with some custom options
-geocode("input.csv","output.csv",{
+csvgeocode("input.csv","output.csv",{
    addressColumn: "MY_ADDRESS_COLUMN"
 });
 
 //Stream to stdout with default options
-geocode("input.csv");
+csvgeocode("input.csv");
 
 //Stream to stdout with some custom options
-geocode("input.csv",{
+csvgeocode("input.csv",{
   delay: 500 //wait 500ms between geocoding calls
 });
 
@@ -134,27 +141,23 @@ While the geocoder is running, it will emit three events: `success`, `failure` a
 `complete` is emitted when all rows are done, and includes a summary object with `failures`, `successes`, and `time` properties.
 
 ```js
-geocoder("input.csv","output.csv")
-  .on("success",function(address){
-    //Triggered every time a row successfully geocodes
+csvgeocoder("input.csv","output.csv")
+  .on("failure",function(error){
+    //do something with the error message
   })
-  .on("failure",function(err){
-    //Triggered every time a row fails to geocode
-    console.warn(err);
+  .on("success",function(address){
+    //Address was successfully geocoded
   })
   .on("complete",function(summary){
-    console.log(summary);
+    /*
+    Summary is an object like:
+    {
+      failures: 1, //1 row failed
+      successes: 49, //49 rows succeeded
+      time: 8700 //it took 8.7 seconds
+    }
+    */
   });
-
-/*
-[NO MATCH] 123 FICTIONAL STREET
-[NO MATCH] 99 MISFORMATTED ADDRESS, USA
-{
-  'failures': 2, //2 rows failed
-  'successes': 80 //80 rows succeeded,
-  'time': '15.4s' //took 15.4 seconds
-}
-*/
 
 ```
 
@@ -163,7 +166,7 @@ geocoder("input.csv","output.csv")
 The default values for `url` and `handler` are configured to work with Google's Geocoding API.  To use a different geocoding service, supply different values for those two options.  For example, if you want to use Mapbox's geocoding API:
 
 ```js
-geocode("input.csv","output.csv",{
+csvgeocode("input.csv","output.csv",{
   "url": "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token=MY_API_KEY",
   "handler": mapboxHandler
 });

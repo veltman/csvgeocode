@@ -1,8 +1,8 @@
 {
-  "name": "geocode-csv",
+  "name": "csvgeocode",
   "version": "0.0.1",
   "description": "Bulk geocode addresses in a CSV.",
-  "main": "src/index.js",
+  "main": "index.js",
   "directories": {
     "test": "test"
   },
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/veltman/address-book.git"
+    "url": "https://github.com/veltman/csvgeocode.git"
   },
   "keywords": [
     "geocode",
@@ -19,17 +19,21 @@
     "address",
     "csv"
   ],
+  "bin": {
+    "csvgeocode": "./bin/csvgeocode"
+  },
   "author": "Noah Veltman (@veltman)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/veltman/geocode-csv/issues"
+    "url": "https://github.com/veltman/csvgeocode/issues"
   },
-  "homepage": "https://github.com/veltman/geocode-csv",
+  "homepage": "https://github.com/veltman/csvgeocode",
   "dependencies": {
     "csv-parse": "0.0.6",
     "csv-stringify": "0.0.6",
     "extend": "^2.0.0",
     "queue-async": "^1.0.7",
-    "request": "^2.53.0"
+    "request": "^2.53.0",
+    "yargs": "^3.0.4"
   }
 }
