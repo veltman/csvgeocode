@@ -269,10 +269,11 @@ function mapboxHandler(body,address) {
 
 ## Notes
 
-Geocoding a long list of unsanitized addresses rarely goes perfectly the first time.  Using csvgeocove, any addresses that don't succeed will have their lat/lng columns left blank.  By listening for the `failure` event (or just browsing the results), you can figure out which ones failed and edit them as needed.  Then you can run the result back through and only the failed rows will get re-geocoded.
+Geocoding a long list of unsanitized addresses rarely goes perfectly the first time.  Using csvgeocode, any addresses that don't succeed will have their lat/lng columns left blank.  By listening for the `failure` event (or just browsing the results), you can figure out which ones failed and edit them as needed.  Then you can run the result back through and only the failed rows will get re-geocoded.
 
 ## To Do
 
+* Add the NYC geocoder and Mapbox as built-in handlers.
 * Support a CSV with no header row where `latColumn`, `lngColumn`, and `addressColumn` are numerical indices instead of column names.
 * Make `bounds` a separate option rather than something you have to hardcore into the URL.
 * Support both POST and GET requests somehow.
