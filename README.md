@@ -270,8 +270,8 @@ Geocoding a long list of unsanitized addresses rarely goes perfectly the first t
 
 ## To Do
 
-* Add the NYC geocoder and Mapbox as built-in handlers.
-* Support a CSV with no header row where `latColumn`, `lngColumn`, and `addressColumn` are numerical indices instead of column names.
+* Add the NYC geocoder as a built-in handler.
+* Support a CSV with no header row where `lat`, `lng`, and `address` are numerical indices instead of column names.
 * Make `bounds` a separate option rather than something you have to hardcore into the URL.
 * Support both POST and GET requests somehow.
 
