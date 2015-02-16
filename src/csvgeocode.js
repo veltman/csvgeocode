@@ -1,5 +1,6 @@
 var misc = require("./misc"),
     defaults = require("./defaults"),
+    handlers = require("./handlers"),
     fs = require("fs"),
     request = require("request"),
     parse = require("csv-parse"),
@@ -30,6 +31,17 @@ function generate(inFile,outFile,userOptions) {
 
   //Default options
   options = extend(defaults,options);
+
+  if (typeof options.handler === "string") {
+    options.handler = options.handler.toLowerCase();
+    if (handlers[options.handler]) {
+      options.handler = handlers[options.handler];
+    } else {
+      throw new Error("Invalid value for 'handler' option.  Must be 'google', 'mapbox', or a function.");      
+    }
+  } else if (typeof options.handler !== "function") {
+    throw new Error("Invalid value for 'handler' option.  Must be 'google', 'mapbox', or a function.");
+  }
 
   var geocoder = new Geocoder(input,output,options);
 
