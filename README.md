@@ -202,7 +202,16 @@ Acceptable values are `"google"`, `"mapbox"`, or a custom handler function for a
 
 **Default:** "google"
 
-Writing your own could look something like this:
+To use Mapbox instead, you should supply `"mapbox"` as the handler and a Mapbox API url with your API key, like:
+
+```js
+csvgeocode("input.csv","output.csv",{
+  url: "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token=MY_API_KEY",
+  handler: "mapbox"
+});
+```
+
+Using a custom handler could look something like this:
 
 ```js
 csvgeocode("input.csv","output.csv",{
