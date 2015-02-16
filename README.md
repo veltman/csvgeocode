@@ -268,6 +268,7 @@ Geocoding a long list of unsanitized addresses rarely goes perfectly the first t
 * Make `bounds` a separate option rather than something you have to hardcore into the URL.
 * Support the `handler` option for CLI too.
 * Support both POST and GET requests somehow.
+* Rather than streams, just use a callback-based parser+stringifier.  Makes more sense for modest amounts of data anyway.
 
 ## Credits/License
 
