@@ -207,30 +207,35 @@ function mapboxHandler(body,address) {
 
 ## Events
 
-If you're using csvgeocode as a module in a script, you can listen for three events: `success`, `failure` and `complete`.
+If you're using csvgeocode as a module in a script, you can listen for two events: `row` and `complete`.
 
-`success` is emitted whenever a row in the input CSV successfully geocodes.
-
-`failure` is emitted whenever a row in the input CSV fails to geocode.
+`row` is emitted whenever a row in the input CSV is processed.  It passes two arguments: a string error message if the geocoding failed (`null` if it was successful), and the row itself.
 
 `complete` is emitted when all rows are done, and includes a summary object with `failures`, `successes`, and `time` properties.
 
 ```js
 csvgeocoder("input.csv","output.csv")
-  .on("failure",function(error){
-    //An address failed, there's an error message
-  })
-  .on("success",function(address){
-    //An address was successfully geocoded
+  .on("row",function(error,row){
+    /*
+    `error` will be a string if geocoding failed or null if it succeeded
+    `row` will be a hash of the row like:
+      {
+        first: "John",
+        last: "Keefe",
+        address: "160 Varick St, New York NY",
+        employer: "WNYC",
+        lat: 40.7267926,
+        lng: -74.00537369999999
+      }
   })
   .on("complete",function(summary){
     /*
     Summary is an object like:
-    {
-      failures: 1, //1 row failed
-      successes: 49, //49 rows succeeded
-      time: 8700 //it took 8.7 seconds
-    }
+      {
+        failures: 1, //1 row failed
+        successes: 49, //49 rows succeeded
+        time: 8700 //it took 8.7 seconds
+      }
     */
   });
 
