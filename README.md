@@ -207,7 +207,7 @@ function mapboxHandler(body,address) {
 
 ## Events
 
-If you're using csvgeocode as a module in a script, you can listen for three three events: `success`, `failure` and `complete`.
+If you're using csvgeocode as a module in a script, you can listen for three events: `success`, `failure` and `complete`.
 
 `success` is emitted whenever a row in the input CSV successfully geocodes.
 
