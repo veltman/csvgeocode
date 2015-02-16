@@ -158,7 +158,7 @@ $ csvgeocode input.csv output.csv --lng MY_LONGITUDE_COLUMN
 
 #### `delay`
 
-The number of milliseconds to wait between geocoding calls.  Setting this to 0 may result in most calls failing because of API throttling.  Space your requests out a little.  Let 'em breathe.
+The number of milliseconds to wait between geocoding calls.  Setting this to 0 is probably a bad idea because most geocoders limit how fast you can make requests.
 
 **Default:** `250`
 
