@@ -159,6 +159,7 @@ The URL template to use for geocoding.  The placeholder `{{a}}` will be replaced
 
 ```
 $ csvgeocode input.csv -output.csv --url "https://maps.googleapis.com/maps/api/geocode/json?bounds=40,-74|41,-72&address={{a}}"
+```
 
 #### `handler`
 
