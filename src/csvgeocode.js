@@ -76,8 +76,6 @@ Geocoder.prototype.run = function() {
   this.input.pipe(this.parser)
     .on("data",function(row){
 
-      this.emit("data",row);
-
       //If there are unset column names,
       //try to discover them on the first data row
       if (this.options.lat === null || this.options.lng === null || this.options.address === null) {
@@ -109,13 +107,13 @@ Geocoder.prototype.codeRow = function(row,cb) {
   };
 
   if (row[this.options.address] === undefined) {
-    this.emit("failure","[ERROR] Couldn't find address column '"+this.options.address+"'");
+    this.emit("row","Couldn't find address column '"+this.options.address+"'",row);
     return this.formatter.write(row,cbgb);
   }
 
   //Doesn't need geocoding
   if (!this.options.force && misc.isNumeric(row[this.options.lat]) && misc.isNumeric(row[this.options.lng])) {
-    this.emit("success",row[this.options.address]);
+    this.emit("row",null,row);
     return this.formatter.write(row,cbgb);
   }
 
@@ -125,7 +123,7 @@ Geocoder.prototype.codeRow = function(row,cb) {
     row[this.options.lat] = this.cache[row[this.options.address]].lat;
     row[this.options.lng] = this.cache[row[this.options.address]].lng;
 
-    this.emit("success",row[this.options.address]);
+    this.emit("row",null,row);
     return this.formatter.write(row,cbgb);
 
   }
@@ -137,18 +135,18 @@ Geocoder.prototype.codeRow = function(row,cb) {
     //Some other error
     if (err) {
 
-      this.emit("failure","[ERROR]"+err.toString());
+      this.emit("row",err.toString(),row);
 
     } else if (response.statusCode !== 200) {
 
-      this.emit("failure","[ERROR] HTTP Status "+response.statusCode);
+      this.emit("row","HTTP Status "+response.statusCode,row);
 
     } else {
 
       try {
         result = this.options.handler(body,row[this.options.address]);
       } catch(e) {
-        this.emit("failure","[ERROR] Parsing error: "+e.toString());
+        this.emit("row","Parsing error: "+e.toString(),row);
       }
 
       //Error code
@@ -157,7 +155,7 @@ Geocoder.prototype.codeRow = function(row,cb) {
         row[this.options.lat] = "";
         row[this.options.lng] = "";
 
-        this.emit("failure",result);
+        this.emit("row",result,row);
 
       //Success
       } else if ("lat" in result && "lng" in result) {
@@ -167,12 +165,12 @@ Geocoder.prototype.codeRow = function(row,cb) {
 
         //Cache the result
         this.cache[row[this.options.address]] = result;
-        this.emit("success",row[this.options.address]);
+        this.emit("row",null,row);
 
       //Unknown extraction error
       } else {
 
-        this.emit("failure","[ERROR] Invalid return value from handler for response body: "+body);
+        this.emit("row","Invalid return value from handler for response body: "+body,row);
 
       }
 

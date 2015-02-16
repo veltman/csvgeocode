@@ -10,11 +10,11 @@ module.exports = {
 
     //No match, return a string
     if (response.status === "ZERO_RESULTS" || response.status === "OK") {
-      return "[NO MATCH] "+address;
+      return "NO MATCH";
     }
 
     //Other error, return a string
-    return "[ERROR] "+response.status;
+    return response.status;
 
   },
   mapbox: function(body,address) {
@@ -22,9 +22,9 @@ module.exports = {
     var response = JSON.parse(body);
 
     if (response.features === undefined) {
-      return "[ERROR] "+response.message;
+      return response.message;
     } else if (!response.features.length) {
-      return "[NO MATCH] "+address;
+      return "NO MATCH";
     }
 
     return {

@@ -9,10 +9,10 @@ var path = require("path"),
     .describe("url","URL template for geocoding API with {{a}} as the address placeholder. Default: https://maps.googleapis.com/maps/api/geocode/json?address={{a}}")
     .describe("delay","Milliseconds to wait between API calls. Default: 250")
     .describe("force","Re-geocode every row even if a lat/lng already exists.")
+    .describe("verbose","Show some information while csvgeocode is running.")
     .describe("help","Show this message.")
-    .boolean(["force","help"])
+    .boolean(["force","verbose","help"])
     .string(["_","lat","lng","address","url"])
-    .demand(1)
     .check(function(argv) {
 
       if (argv.help) return;
@@ -24,10 +24,11 @@ var path = require("path"),
 
     }),
     args = yargs.argv,
-    geocode = require("../")
-    options = require("../src/defaults");
+    geocode = require("../"),
+    options = require("../src/defaults"),
+    geocoder;
 
-if (args.help) {
+if (args.help || !args._ || !args._.length) {
   return yargs.showHelp();
 }
 
@@ -39,16 +40,27 @@ for (var key in options) {
 
 //They specified an output file
 if (args._.length > 1) {
-  geocode(args._[0],args._[1],options)
-    .on("failure",function(err){
-      console.log(err);
-    })
-    .on("complete",function(summary){
-      console.log("Rows geocoded: "+summary.successes+"\n"+
-                  "Rows failed: "+summary.failures+"\n"+
-                  "Time elapsed: "+(Math.round(summary.time/100)/10)+" seconds");
-    });
+
+  geocoder = geocode(args._[0],args._[1],options);
+
+  if (args.verbose) {
+
+    geocoder.on("row",function(err,row){
+        var address = "";
+        if (row[geocoder.options.address]) {
+          address = row[geocoder.options.address]+": ";
+        }
+        console.warn(address+(err || "SUCCESS"));
+      })
+      .on("complete",function(summary){
+        console.warn("\nRows geocoded: "+summary.successes+"\n"+
+                    "Rows failed: "+summary.failures+"\n"+
+                    "Time elapsed: "+(Math.round(summary.time/100)/10)+" seconds");
+      });
+
+  }
+
 //No output file, use stdout
 } else {
-  geocode(args._[0],options);
+  geocoder = geocode(args._[0],options);
 }

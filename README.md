@@ -151,6 +151,21 @@ csvgeocode("input.csv","output.csv",{
 });
 ```
 
+#### `verbose`
+
+When using the command line version, supply `--verbose` to see extra output while csvgeocode is running.
+
+```
+$ csvgeocode input.csv output.csv --verbose
+160 Varick St, New York NY: SUCCESS
+1600 Pennsylvania Ave, Washington, DC: SUCCESS
+123 Fictional St: NO MATCH
+
+Rows geocoded: 2
+Rows failed: 1
+Time elapsed: 1.8 seconds
+```
+
 #### `url`
 
 The URL template to use for geocoding.  The placeholder `{{a}}` will be replaced by each individual address.  You might want to use this to add extra arguments to a Google geocoding request, like bounds.  If you want to use a different geocoder entirely, you should only use it in a script (see "Using a different geocoder" below).
