@@ -171,7 +171,7 @@ A custom handler function will get two arguments: the response body and the addr
 
 ## Using a different geocoder
 
-To use a geocoding API besides Google's, you need to use csvgeocode and supply custom `url` and `handler` options.  For example, if you wanted to use the Mapbox geocoder, you would do something like:
+To use a geocoding API besides Google's, you need to use csvgeocode in a script and supply custom `url` and `handler` options.  For example, if you wanted to use the Mapbox geocoder, you would do something like:
 
 ```js
 csvgeocode("input.csv","output.csv",{
