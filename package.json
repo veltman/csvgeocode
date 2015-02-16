@@ -1,13 +1,13 @@
 {
   "name": "csvgeocode",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Bulk geocode addresses in a CSV.",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/test.js"
   },
   "repository": {
     "type": "git",

@@ -70,7 +70,9 @@ Geocoder.prototype.run = function() {
   this.parser = parse({ columns: true });
   this.time = (new Date()).getTime();
 
-  this.formatter.pipe(this.output);
+  if (!this.options.test) {
+    this.formatter.pipe(this.output);
+  }
 
   //extend options with defaults
   this.input.pipe(this.parser)
