@@ -229,7 +229,7 @@ function mySpecialHandler(body,address) {
     lng: parsed.results[0].lng
   };
 }
-
+```
 
 ## Events
 
@@ -262,36 +262,6 @@ csvgeocoder("input.csv","output.csv")
     */
   });
 
-```
-
-## Using a different geocoder
-
-The default values for `url` and `handler` are configured to work with Google's Geocoding API.  To use a different geocoding service, supply different values for those two options.  For example, if you want to use Mapbox's geocoding API:
-
-```js
-csvgeocode("input.csv","output.csv",{
-  "url": "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token=MY_API_KEY",
-  "handler": mapboxHandler
-});
-
-function mapboxHandler(body,address) {
-
-  var response = JSON.parse(body);
-
-  //Error, return a string
-  if (response.features === undefined) {
-    return "[ERROR] "+response.message;
-  } else if (!response.features.length) {
-    return "[NO MATCH] "+address;
-  }
-
-  //Success, return a lat/lng object
-  return {
-    lat: response.features[0].center[1],
-    lng: response.features[0].center[0]
-  };
-
-}
 ```
 
 ## Notes
