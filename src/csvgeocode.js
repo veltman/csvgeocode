@@ -85,7 +85,7 @@ Geocoder.prototype.run = function() {
         this.options = misc.discoverOptions(this.options,row);
 
         if (this.options.address === null) {
-          this.emit("failure","[ERROR] Couldn't auto-detect address column.");
+          throw new Error("Couldn't auto-detect address column.");
         }
 
       }
@@ -148,7 +148,7 @@ Geocoder.prototype.codeRow = function(row,cb) {
       try {
         result = this.options.handler(body,row[this.options.address]);
       } catch(e) {
-        this.emit("failure","[ERROR] Parsing error: "+e);
+        this.emit("failure","[ERROR] Parsing error: "+e.toString());
       }
 
       //Error code
@@ -179,7 +179,7 @@ Geocoder.prototype.codeRow = function(row,cb) {
     }
 
     return this.formatter.write(row,function(){
-      setTimeout(cbgb,this.options.timeout);
+      setTimeout(cbgb,this.options.delay);
     }.bind(this));
 
   }.bind(this));
