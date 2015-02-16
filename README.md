@@ -69,7 +69,7 @@ csvgeocode("input.csv",{
 You can supply all the same options to the command line version:
 
 ```
-$ csvgeocode /path/to/input.csv /path/to/output.csv --delay 500 --address MY_ADDRESS_COLUMN_NAME
+$ csvgeocode path/to/input.csv path/to/output.csv --delay 500 --address MY_ADDRESS_COLUMN_NAME
 ```
 
 ## Options
