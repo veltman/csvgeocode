@@ -14,23 +14,23 @@ module.exports = generate;
 
 function generate(inFile,outFile,userOptions) {
 
-  var input = fs.createReadStream(inFile),
-      output = process.stdout,
+  var input = inFile,
+      output = null,
       options = {};
 
   if (arguments.length === 2) {
     if (typeof outFile === "string") {
-      output = fs.createWriteStream(outFile);
+      output = outFile;
     } else {
       options = outFile;
     }
   } else if (arguments.length === 3) {
-    output = fs.createWriteStream(outFile);
+    output = outFile;
     options = userOptions;
   }
 
   //Default options
-  options = extend(defaults,options);
+  options = extend({},defaults,options);
 
   if (typeof options.handler === "string") {
     options.handler = options.handler.toLowerCase();
@@ -54,10 +54,6 @@ var Geocoder = function(input,output,options) {
   this.input = input;
   this.output = output;
   this.options = options;
-
-  //TO DO: allow more concurrency?
-  this.queue = queue(1);
-
   this.cache = {}; //Cached results by address
 
 };
@@ -66,135 +62,166 @@ util.inherits(Geocoder, EventEmitter);
 
 Geocoder.prototype.run = function() {
 
-  this.formatter = format({ header: true });
-  this.parser = parse({ columns: true });
+  var q = queue(1),
+      _this = this;
+
   this.time = (new Date()).getTime();
 
-  if (!this.options.test) {
-    this.formatter.pipe(this.output);
-  }
-
-  //extend options with defaults
-  this.input.pipe(this.parser)
-    .on("data",function(row){
-
-      //If there are unset column names,
-      //try to discover them on the first data row
-      if (this.options.lat === null || this.options.lng === null || this.options.address === null) {
-
-        this.options = misc.discoverOptions(this.options,row);
-
-        if (this.options.address === null) {
-          throw new Error("Couldn't auto-detect address column.");
-        }
-
-      }
-
-      this.queue.defer(this.codeRow.bind(this),row);
-
-
-    }.bind(this))
-    .on("end",function(){
-      this.queue.awaitAll(this.complete.bind(this));
-    }.bind(this));
+  fs.readFile(this.input,"utf8",fileRead);
 
   return this;
 
-}
 
-Geocoder.prototype.codeRow = function(row,cb) {
+  function fileRead(err,csv) {
 
-  var cbgb = function(){
-    return cb(null,!!(row.lat && row.lng));
-  };
-
-  if (row[this.options.address] === undefined) {
-    this.emit("row","Couldn't find address column '"+this.options.address+"'",row);
-    return this.formatter.write(row,cbgb);
-  }
-
-  //Doesn't need geocoding
-  if (!this.options.force && misc.isNumeric(row[this.options.lat]) && misc.isNumeric(row[this.options.lng])) {
-    this.emit("row",null,row);
-    return this.formatter.write(row,cbgb);
-  }
-
-  //Address is cached from a previous result
-  if (this.cache[row[this.options.address]]) {
-
-    row[this.options.lat] = this.cache[row[this.options.address]].lat;
-    row[this.options.lng] = this.cache[row[this.options.address]].lng;
-
-    this.emit("row",null,row);
-    return this.formatter.write(row,cbgb);
-
-  }
-
-  request.get(misc.url(this.options.url,row[this.options.address]),function(err,response,body){
-
-    var result;
-
-    //Some other error
     if (err) {
+      throw new Error(err);
+    }
 
-      this.emit("row",err.toString(),row);
+    parse(csv,{columns: true},csvParsed);
 
-    } else if (response.statusCode !== 200) {
+  }
 
-      this.emit("row","HTTP Status "+response.statusCode,row);
+  function csvParsed(err,parsed) {
 
-    } else {
+    //If there are unset column names,
+    //try to discover them on the first data row
+    if (_this.options.lat === null || _this.options.lng === null || _this.options.address === null) {
 
-      try {
-        result = this.options.handler(body,row[this.options.address]);
-      } catch(e) {
-        this.emit("row","Parsing error: "+e.toString(),row);
-      }
+      _this.options = misc.discoverOptions(_this.options,parsed[0]);
 
-      //Error code
-      if (typeof result === "string") {
-
-        row[this.options.lat] = "";
-        row[this.options.lng] = "";
-
-        this.emit("row",result,row);
-
-      //Success
-      } else if ("lat" in result && "lng" in result) {
-
-        row[this.options.lat] = result.lat;
-        row[this.options.lng] = result.lng;
-
-        //Cache the result
-        this.cache[row[this.options.address]] = result;
-        this.emit("row",null,row);
-
-      //Unknown extraction error
-      } else {
-
-        this.emit("row","Invalid return value from handler for response body: "+body,row);
-
+      if (_this.options.address === null) {
+        throw new Error("Couldn't auto-detect address column.");
       }
 
     }
 
-    return this.formatter.write(row,function(){
-      setTimeout(cbgb,this.options.delay);
-    }.bind(this));
+    parsed.forEach(function(row){
+      q.defer(codeRow,row);
+    });
 
-  }.bind(this));
+    q.awaitAll(complete);
 
-};
+  }
 
-Geocoder.prototype.complete = function(err,results){
-  var failures = results.filter(function(d){
-    return !d;
-  }).length;
+  function codeRow(row,cb) {
 
-  this.emit("complete",{
-    failures: failures,
-    successes: results.length - failures,
-    time: (new Date()).getTime() - this.time
-  });
+    if (row[_this.options.address] === undefined) {
+      _this.emit("row","Couldn't find address column '"+_this.options.address+"'",row);
+      return cb(null,row);
+    }
+
+    //Doesn't need geocoding
+    if (!_this.options.force && misc.isNumeric(row[_this.options.lat]) && misc.isNumeric(row[_this.options.lng])) {
+      _this.emit("row",null,row);
+      return cb(null,row);
+    }
+
+    //Address is cached from a previous result
+    if (_this.cache[row[_this.options.address]]) {
+
+      row[_this.options.lat] = _this.cache[row[_this.options.address]].lat;
+      row[_this.options.lng] = _this.cache[row[_this.options.address]].lng;
+
+      _this.emit("row",null,row);
+      return cb(null,row);
+
+    }
+
+    request.get(misc.url(_this.options.url,row[_this.options.address]),function(err,response,body) {
+    
+      //Some other error
+      if (err) {
+
+        _this.emit("row",err.toString(),row);
+        return cb(null,row);
+
+      } else if (response.statusCode !== 200) {
+
+        _this.emit("row","HTTP Status "+response.statusCode,row);
+        return cb(null,row);
+
+      } else {
+
+        handleResponse(body,row,cb);
+
+      }
+
+    });
+
+  }
+
+
+  function handleResponse(body,row,cb) {
+
+    var result;
+
+    try {
+      result = _this.options.handler(body,row[_this.options.address]);
+    } catch(e) {
+      _this.emit("row","Parsing error: "+e.toString(),row);
+    }
+
+    //Error code
+    if (typeof result === "string") {
+
+      row[_this.options.lat] = "";
+      row[_this.options.lng] = "";
+
+      _this.emit("row",result,row);
+
+    //Success
+    } else if ("lat" in result && "lng" in result) {
+
+      row[_this.options.lat] = result.lat;
+      row[_this.options.lng] = result.lng;
+
+      //Cache the result
+      _this.cache[row[_this.options.address]] = result;
+      _this.emit("row",null,row);
+
+    //Unknown extraction error
+    } else {
+
+      _this.emit("row","Invalid return value from handler for response body: "+body,row);
+
+    }
+
+    return setTimeout(function(){
+      cb(null,row);
+    },_this.options.delay);
+
+  }
+
+
+  function complete(err,results) {
+
+    if (!_this.options.test) {
+      csv.stringify(data,{ header: true },function(e,stringified){
+        //write to a file
+        console.log("WOULD WRITE TO A FILE");
+        summary(results);
+      });
+    } else {
+      summary(results);
+    }
+
+  }
+
+  function successful(row) {
+    return misc.isNumeric(row[_this.options.lat]) && misc.isNumeric(row[_this.options.lng]);
+  }
+
+  function summary(results) {
+
+    var successes = results.filter(successful).length;
+
+    _this.emit("complete",{
+      failures: results.length - successes,
+      successes: successes,
+      time: (new Date()).getTime() - _this.time
+    });
+  }
 
 }
+
