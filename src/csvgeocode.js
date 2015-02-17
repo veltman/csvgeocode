@@ -4,7 +4,7 @@ var misc = require("./misc"),
     fs = require("fs"),
     request = require("request"),
     parse = require("csv-parse"),
-    format = require("csv-stringify"),
+    stringify = require("csv-stringify"),
     queue = require("queue-async"),
     extend = require("extend"),
     util = require("util"),
@@ -194,33 +194,39 @@ Geocoder.prototype.run = function() {
   }
 
 
-  function complete(err,results) {
+  function complete(e,results) {
+
+    var successes = results.filter(successful).length,
+        summary = {
+          failures: results.length - successes,
+          successes: successes,
+          time: (new Date()).getTime() - _this.time
+        };
 
     if (!_this.options.test) {
-      csv.stringify(data,{ header: true },function(e,stringified){
+      stringify(results,{ header: true },function(e,stringified){
         //write to a file
-        console.log("WOULD WRITE TO A FILE");
-        summary(results);
+        if (_this.output) {
+          fs.writeFile(_this.output,stringified,function(err){
+            if (err) {
+              throw new Error(err);
+            }
+            _this.emit("complete",summary);
+          });
+        } else {
+          process.stdout.write(stringified,function(){
+            _this.emit("complete",summary);
+          });
+        }
       });
     } else {
-      summary(results);
+      _this.emit("complete",summary);
     }
 
   }
 
   function successful(row) {
     return misc.isNumeric(row[_this.options.lat]) && misc.isNumeric(row[_this.options.lng]);
-  }
-
-  function summary(results) {
-
-    var successes = results.filter(successful).length;
-
-    _this.emit("complete",{
-      failures: results.length - successes,
-      successes: successes,
-      time: (new Date()).getTime() - _this.time
-    });
   }
 
 }
