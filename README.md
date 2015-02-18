@@ -211,7 +211,7 @@ Geocoding a long list of unsanitized addresses rarely goes perfectly the first t
 
 ## To Do
 
-* Add the NYC geocoder as a built-in handler.
+* Add the NYC, Mapbox, and TAMU geocoders as a built-in handler.
 * Support a CSV with no header row where `lat`, `lng`, and `address` are numerical indices instead of column names.
 * Allow `address` to be an array of multiple fields that get concatenated (e.g. `["street","city","state","zip"]`)
 * Make `bounds` a separate option rather than something you have to hardcore into the URL.
