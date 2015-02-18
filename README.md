@@ -41,6 +41,12 @@ What API handler to use. Current built-in handlers are "google" and "mapbox". Co
 
 **Default:** `"google"`
 
+#### `--key [key]`
+
+The API key to use with requests.
+
+**Default:** none
+
 #### `--address [address column name]`
 
 The name of the column that contains the address to geocode.
@@ -98,6 +104,10 @@ Use it:
 ```js
 var csvgeocode = require("csvgeocode");
 
+//stream to stdout
+csvgeocode("path/to/input.csv");
+
+//write to a file
 csvgeocode("path/to/input.csv","path/to/output.csv");
 ```
 
@@ -166,11 +176,27 @@ You can use any basic geocoding service from within a Node script by supplying a
 
 The easiest way to see what a handler should look like is to look at [handlers.js](./src/handlers.js).
 
-A handler needs a `url` template and a `process` function.
+A handler needs a `url` function and a `process` function, like:
 
-In the `url` template, the placeholders `{{a}}` and `{{k}}` will be replaced by an individual address and your API key, respectively.  For example, the built-in Mapbox handler assumes the URL template `http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token={{k}}`.
+```js
+var customHandler = {
+  url: function(address,options) {
+    return "http://mygeocoder.com/?address="+encodeURIComponent(address)+"&api_key="+options.key;
+  },
+  process: function(body) {
+    if (body.results) {
+      return body.results[0];
+    } else {
+      return "NO MATCH";
+    }
+  }
+}
 
-The `process` function will be passed two string arguments: the body of the geocoder response and the address being geocoded.  It should return a string error message if there's no lat/lng to use, or it should return an object with `lat` and `lng` properties.
+```
+
+The `url` function will get passed the address being geocoded and the current options and should return the URL to request for that address.
+
+The `process` function will be passed the body of the geocoder response. It should return a string error message if there's no lat/lng to use, or it should return an object with `lat` and `lng` properties.
 
 ## Some Alternatives
 
@@ -180,7 +206,7 @@ The `process` function will be passed two string arguments: the body of the geoc
 
 ## To Do
 
-* Add the NYC, Mapbox, and TAMU geocoders as built-in handlers.
+* Add the NYC and TAMU geocoders as built-in handlers.
 * Support a CSV with no header row where `lat`, `lng`, and `address` are numerical indices instead of column names.
 * Allow `address` to be an array of multiple fields that get concatenated (e.g. `["street","city","state","zip"]`)
 * Support the `handler` option for CLI too?

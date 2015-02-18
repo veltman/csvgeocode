@@ -9,7 +9,6 @@ queue(1)
   .defer(addColumnsTest)
   .defer(handlerTest)
   .defer(throwTest)
-  //.defer(mapboxTest,MAPBOX_API_KEY)
   .awaitAll(function(){});
 
 function basicTest(cb) {
@@ -101,9 +100,14 @@ function addColumnsTest(cb) {
 function handlerTest(cb) {
   geocode("test/basic.csv",{
       force: true,
-      handler: function(body,address){
-        return "CUSTOM ERROR";
-      },
+      handler: {
+        url: function(address,options){
+          return "http://www.yahoo.com/";
+        },
+        process: function(body) {
+          return "CUSTOM ERROR";
+        }
+      }
       test: true
     })
     .on("row",function(err,row){

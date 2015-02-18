@@ -3,10 +3,6 @@ module.exports = {
   isNumeric: function(number) {
     return !Array.isArray(number) && (number - parseFloat(number) + 1) >= 0 && number >= -180 && number <= 180;
   },
-  //Escape address to include as GET parameter
-  url: function(options,address) {
-      return options.handler.url(address,options.key || "");
-  },
   //Try to auto-discover missing column names
   discoverOptions: function(options,row) {
 

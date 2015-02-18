@@ -1,11 +1,11 @@
 module.exports = {
   google: {
-    url: function(address,key) {
-      address = address.replace(/ /g,"+").replace(/[&]/g,"%26");
-      key = key || "";
-      return "https://maps.googleapis.com/maps/api/geocode/json?address="+address+(key ? "&key="+key : "");
+    url: function(address,options) {
+      return "https://maps.googleapis.com/maps/api/geocode/json?address="
+             + address.replace(/ /g,"+").replace(/[&]/g,"%26")
+             + (options.key ? "&key=" + options.key : "");
     },
-    process: function(body,address) {
+    process: function(body) {
 
       var response = JSON.parse(body);
 
@@ -25,12 +25,13 @@ module.exports = {
     }
   },
   mapbox: {
-      url: function(address,key){
-        address = address.replace(/ /g,"+").replace(/[&]/g,"%26");
-        key = key || "";
-        return "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/"+address+".json?access_token="+key;
+      url: function(address,options){
+        return "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/"
+               + address.replace(/ /g,"+").replace(/[&]/g,"%26")
+               + ".json?access_token="
+               + (options.key || ||);
       },
-      process: function(body,address) {
+      process: function(body) {
 
       var response = JSON.parse(body);
 

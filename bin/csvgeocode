@@ -9,6 +9,7 @@ var path = require("path"),
     .describe("delay","Milliseconds to wait between API calls. Default: 250")
     .describe("force","Re-geocode every row even if a lat/lng already exists")
     .describe("verbose","Show some information while csvgeocode is running")
+    .describe("key":"API key to use. Default: none")
     .describe("handler","What API handler to use.  Current built-in options are 'mapbox' and 'google'.  Default: 'google'")
     .describe("help","Show this message")
     .boolean(["force","verbose","help"])

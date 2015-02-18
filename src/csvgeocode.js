@@ -116,7 +116,7 @@ Geocoder.prototype.run = function(input,output,options) {
 
     }
 
-    request.get(misc.url(options,row[options.address]),function(err,response,body) {
+    request.get(options.handler.url(row[options.address],options),function(err,response,body) {
     
       //Some other error
       if (err) {
@@ -145,7 +145,7 @@ Geocoder.prototype.run = function(input,output,options) {
     var result;
 
     try {
-      result = options.handler.process(body,row[options.address]);
+      result = options.handler.process(body);
     } catch (e) {
       _this.emit("row","Parsing error: "+e.toString(),row);
     }
