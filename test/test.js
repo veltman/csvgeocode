@@ -9,10 +9,11 @@ queue(1)
   .defer(addColumnsTest)
   .defer(handlerTest)
   .defer(throwTest)
+  //.defer(mapboxTest,MAPBOX_API_KEY)
   .awaitAll(function(){});
 
 function basicTest(cb) {
-  geocode("basic.csv",{
+  geocode("test/basic.csv",{
       test: true
     })
     .on("row",function(err,row){
@@ -41,7 +42,7 @@ function basicTest(cb) {
 }
 
 function cacheTest(cb) {
-  geocode("basic.csv",{
+  geocode("test/basic.csv",{
       force: true,
       test: true
     })
@@ -60,7 +61,7 @@ function cacheTest(cb) {
 }
 
 function columnNamesTest(cb) {
-  geocode("column-names.csv",{
+  geocode("test/column-names.csv",{
       lat: "LERTITUDE",
       lng: "LANGITUDE",
       test: true
@@ -82,7 +83,7 @@ function columnNamesTest(cb) {
 }
 
 function addColumnsTest(cb) {
-  geocode("column-names.csv",{
+  geocode("test/column-names.csv",{
       test: true
     })
     .on("row",function(err,row){
@@ -98,7 +99,7 @@ function addColumnsTest(cb) {
 }
 
 function handlerTest(cb) {
-  geocode("basic.csv",{
+  geocode("test/basic.csv",{
       force: true,
       handler: function(body,address){
         return "CUSTOM ERROR";
@@ -118,7 +119,7 @@ function throwTest(cb) {
 
   assert.throws(
     function(){
-      geocode("basic.csv",{
+      geocode("test/basic.csv",{
         test: true,
         handler: "dumb string"
       });
@@ -132,5 +133,43 @@ function throwTest(cb) {
   );
 
   cb(null);
+
+}
+
+function mapboxTest(API_KEY,cb) {
+
+  geocode("test/basic.csv",{
+      handler: mapboxHandler,
+      url: "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token=" + API_KEY,
+      test: true
+    })
+    .on("row",function(err,row){
+      console.log(row);
+      if (err) {
+        assert.deepEqual(err,"NO MATCH","Expected NO MATCH from mapboxHandler.");
+      } else {
+        assert(row.lat && row.lng);
+      }
+    })
+    .on("complete",function(summary){
+      cb(null);
+    });
+
+}
+
+function mapboxHandler(body,address) {
+
+  var response = JSON.parse(body);
+
+  if (response.features === undefined) {
+    return response.message;
+  } else if (!response.features.length) {
+    return "NO MATCH";
+  }
+
+  return {
+    lat: response.features[0].center[1],
+    lng: response.features[0].center[0]
+  };
 
 }
