@@ -8,6 +8,7 @@ queue(1)
   .defer(columnNamesTest)
   .defer(addColumnsTest)
   .defer(handlerTest)
+  .defer(keyTest)
   .defer(throwTest)
   .awaitAll(function(){});
 
@@ -107,7 +108,7 @@ function handlerTest(cb) {
         process: function(body) {
           return "CUSTOM ERROR";
         }
-      }
+      },
       test: true
     })
     .on("row",function(err,row){
@@ -148,7 +149,6 @@ function mapboxTest(API_KEY,cb) {
       test: true
     })
     .on("row",function(err,row){
-      console.log(row);
       if (err) {
         assert.deepEqual(err,"NO MATCH","Expected NO MATCH from mapboxHandler.");
       } else {
@@ -161,19 +161,21 @@ function mapboxTest(API_KEY,cb) {
 
 }
 
-function mapboxHandler(body,address) {
+function keyTest(cb) {
 
-  var response = JSON.parse(body);
-
-  if (response.features === undefined) {
-    return response.message;
-  } else if (!response.features.length) {
-    return "NO MATCH";
-  }
-
-  return {
-    lat: response.features[0].center[1],
-    lng: response.features[0].center[0]
-  };
+  geocode("test/basic.csv",{
+      key: "INVALID_KEY",
+      test: true
+    })
+    .on("row",function(err,row){
+      if (err) {
+        assert.deepEqual(err,"REQUEST_DENIED");
+      } else {
+        assert(row.lat && row.lng);
+      }
+    })
+    .on("complete",function(summary){
+      cb(null);
+    });
 
 }

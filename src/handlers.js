@@ -29,7 +29,7 @@ module.exports = {
         return "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/"
                + address.replace(/ /g,"+").replace(/[&]/g,"%26")
                + ".json?access_token="
-               + (options.key || ||);
+               + (options.key || "");
       },
       process: function(body) {
 
