@@ -199,10 +199,6 @@ function mapboxHandler(body,address) {
 }
 ```
 
-## Notes
-
-Geocoding a long list of unsanitized addresses rarely goes perfectly the first time.  Using csvgeocode, any addresses that don't succeed will have their lat/lng columns left blank.  By listening for the `row` event or browsing the final results, you can figure out which ones failed and edit them as needed.  Then you can run the result back through and only the failed rows will get re-geocoded.
-
 ## Some Alternatives
 
 * [file-geocoder](https://www.npmjs.com/package/file-geocoder)
