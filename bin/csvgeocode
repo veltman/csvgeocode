@@ -43,24 +43,24 @@ if (args._.length > 1) {
 
   geocoder = geocode(args._[0],args._[1],options);
 
-  if (args.verbose) {
-
-    geocoder.on("row",function(err,row){
-        var address = "";
-        if (row[geocoder.options.address]) {
-          address = row[geocoder.options.address]+": ";
-        }
-        console.warn(address+(err || "SUCCESS"));
-      })
-      .on("complete",function(summary){
-        console.warn("\nRows geocoded: "+summary.successes+"\n"+
-                    "Rows failed: "+summary.failures+"\n"+
-                    "Time elapsed: "+(Math.round(summary.time/100)/10)+" seconds");
-      });
-
-  }
-
 //No output file, use stdout
 } else {
   geocoder = geocode(args._[0],options);
+}
+
+if (args.verbose) {
+
+  geocoder.on("row",function(err,row){
+      var address = "";
+      if (row[geocoder.options.address]) {
+        address = row[geocoder.options.address]+": ";
+      }
+      console.warn(address+(err || "SUCCESS"));
+    })
+    .on("complete",function(summary){
+      console.warn("\nRows geocoded: "+summary.successes+"\n"+
+                  "Rows failed: "+summary.failures+"\n"+
+                  "Time elapsed: "+(Math.round(summary.time/100)/10)+" seconds");
+    });
+
 }

@@ -3,11 +3,10 @@ var misc = require("./misc"),
     handlers = require("./handlers"),
     fs = require("fs"),
     request = require("request"),
-    parse = require("csv-parse"),
-    stringify = require("csv-stringify"),
     queue = require("queue-async"),
     extend = require("extend"),
     util = require("util"),
+    csv = require("./csv"),
     EventEmitter = require("events").EventEmitter;
 
 module.exports = generate;
@@ -43,54 +42,40 @@ function generate(inFile,outFile,userOptions) {
     throw new Error("Invalid value for 'handler' option.  Must be 'google', 'mapbox', or a function.");
   }
 
-  var geocoder = new Geocoder(input,output,options);
+  var geocoder = new Geocoder();
 
-  return geocoder.run();
+  return geocoder.run(input,output,options);
 
 };
 
-var Geocoder = function(input,output,options) {
-
-  this.input = input;
-  this.output = output;
-  this.options = options;
-  this.cache = {}; //Cached results by address
-
+var Geocoder = function() {
 };
 
 util.inherits(Geocoder, EventEmitter);
 
-Geocoder.prototype.run = function() {
+Geocoder.prototype.run = function(input,output,options) {
 
-  var q = queue(1),
-      _this = this;
+  var cache = {}, //Cached results by address
+      _this = this,
+      time = (new Date()).getTime();
 
-  this.time = (new Date()).getTime();
+  this.options = options;
 
-  fs.readFile(this.input,"utf8",fileRead);
+  csv.read(input,csvParsed);
 
   return this;
 
+  function csvParsed(parsed) {
 
-  function fileRead(err,csv) {
-
-    if (err) {
-      throw new Error(err);
-    }
-
-    parse(csv,{columns: true},csvParsed);
-
-  }
-
-  function csvParsed(err,parsed) {
+    var q = queue(1);
 
     //If there are unset column names,
     //try to discover them on the first data row
-    if (_this.options.lat === null || _this.options.lng === null || _this.options.address === null) {
+    if (options.lat === null || options.lng === null || options.address === null) {
 
-      _this.options = misc.discoverOptions(_this.options,parsed[0]);
+      options = misc.discoverOptions(options,parsed[0]);
 
-      if (_this.options.address === null) {
+      if (options.address === null) {
         throw new Error("Couldn't auto-detect address column.");
       }
 
@@ -106,29 +91,29 @@ Geocoder.prototype.run = function() {
 
   function codeRow(row,cb) {
 
-    if (row[_this.options.address] === undefined) {
-      _this.emit("row","Couldn't find address column '"+_this.options.address+"'",row);
+    if (row[options.address] === undefined) {
+      _this.emit("row","Couldn't find address column '"+options.address+"'",row);
       return cb(null,row);
     }
 
     //Doesn't need geocoding
-    if (!_this.options.force && misc.isNumeric(row[_this.options.lat]) && misc.isNumeric(row[_this.options.lng])) {
+    if (!options.force && misc.isNumeric(row[options.lat]) && misc.isNumeric(row[options.lng])) {
       _this.emit("row",null,row);
       return cb(null,row);
     }
 
     //Address is cached from a previous result
-    if (_this.cache[row[_this.options.address]]) {
+    if (cache[row[options.address]]) {
 
-      row[_this.options.lat] = _this.cache[row[_this.options.address]].lat;
-      row[_this.options.lng] = _this.cache[row[_this.options.address]].lng;
+      row[options.lat] = cache[row[options.address]].lat;
+      row[options.lng] = cache[row[options.address]].lng;
 
       _this.emit("row",null,row);
       return cb(null,row);
 
     }
 
-    request.get(misc.url(_this.options.url,row[_this.options.address]),function(err,response,body) {
+    request.get(misc.url(options.url,row[options.address]),function(err,response,body) {
     
       //Some other error
       if (err) {
@@ -157,7 +142,7 @@ Geocoder.prototype.run = function() {
     var result;
 
     try {
-      result = _this.options.handler(body,row[_this.options.address]);
+      result = options.handler(body,row[options.address]);
     } catch(e) {
       _this.emit("row","Parsing error: "+e.toString(),row);
     }
@@ -165,19 +150,19 @@ Geocoder.prototype.run = function() {
     //Error code
     if (typeof result === "string") {
 
-      row[_this.options.lat] = "";
-      row[_this.options.lng] = "";
+      row[options.lat] = "";
+      row[options.lng] = "";
 
       _this.emit("row",result,row);
 
     //Success
     } else if ("lat" in result && "lng" in result) {
 
-      row[_this.options.lat] = result.lat;
-      row[_this.options.lng] = result.lng;
+      row[options.lat] = result.lat;
+      row[options.lng] = result.lng;
 
       //Cache the result
-      _this.cache[row[_this.options.address]] = result;
+      cache[row[options.address]] = result;
       _this.emit("row",null,row);
 
     //Unknown extraction error
@@ -189,45 +174,45 @@ Geocoder.prototype.run = function() {
 
     return setTimeout(function(){
       cb(null,row);
-    },_this.options.delay);
+    },options.delay);
 
   }
 
 
   function complete(e,results) {
 
-    var successes = results.filter(successful).length,
-        summary = {
-          failures: results.length - successes,
-          successes: successes,
-          time: (new Date()).getTime() - _this.time
+    var numSuccesses = results.filter(successful).length,
+        numFailures = results.length - numSuccesses,
+        summarize = function(){
+          _this.emit("complete",{
+            failures: numFailures,
+            successes: numSuccesses,
+            time: (new Date()).getTime() - time
+          });
         };
 
-    if (!_this.options.test) {
-      stringify(results,{ header: true },function(e,stringified){
-        //write to a file
-        if (_this.output) {
-          fs.writeFile(_this.output,stringified,function(err){
-            if (err) {
-              throw new Error(err);
-            }
-            _this.emit("complete",summary);
-          });
-        } else {
-          process.stdout.write(stringified,function(){
-            _this.emit("complete",summary);
-          });
-        }
-      });
+    if (!options.test) {
+      if (typeof output === "string") {
+        csv.write(output,results,summarize);
+      } else {
+        output = output || process.stdout;
+        csv.stringify(results,function(string){
+          try {
+            output.write(string,summarize);
+          } catch(e) {
+            throw new TypeError("Second argument output needs to be a filename or a writeable stream.");
+          }
+        })
+      }
     } else {
-      _this.emit("complete",summary);
+      summarize();
     }
 
   }
 
   function successful(row) {
-    return misc.isNumeric(row[_this.options.lat]) && misc.isNumeric(row[_this.options.lng]);
+    return misc.isNumeric(row[options.lat]) && misc.isNumeric(row[options.lng]);
   }
 
-}
+};
 
