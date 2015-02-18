@@ -16,7 +16,7 @@ var path = require("path"),
     .check(function(argv) {
 
       if (argv.help) return;
-      if ("delay" in argv && isNaN(Number(arg))) {
+      if ("delay" in argv && isNaN(Number(argv.delay))) {
         throw new Error("--delay requires a numeric value in milliseconds.");
       }
 
