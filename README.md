@@ -1,9 +1,9 @@
 csvgeocode
 ==========
 
-For when you have a CSV with addresses and you want a lat/lng for every row.  Bulk geocode addresses a CSV with one or two lines of code. 
+For when you have a CSV with addresses and you want a lat/lng for every row.  Bulk geocode addresses a CSV with a few lines of code. 
 
-The defaults are configured to use [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.
+The defaults are configured to use [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.  Make sure that you use this in compliance with the relevant API's terms of service (Google's terms are [here](https://developers.google.com/maps/terms) and require any geocoding to be in conjunction with display on a Google Map).
 
 ## Basic command line usage
 
