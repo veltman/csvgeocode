@@ -28,7 +28,7 @@ function generate(inFile,outFile,userOptions) {
     options = userOptions;
   }
 
-  //Default options
+  //Extend default options
   options = extend({},defaults,options);
 
   if (typeof options.handler === "string") {
@@ -36,10 +36,14 @@ function generate(inFile,outFile,userOptions) {
     if (handlers[options.handler]) {
       options.handler = handlers[options.handler];
     } else {
-      throw new Error("Invalid value for 'handler' option.  Must be 'google', 'mapbox', or a function.");      
+      throw new Error("Invalid value for 'handler' option.  Must be 'google', 'mapbox', or a function.");
     }
   } else if (typeof options.handler !== "function") {
-    throw new Error("Invalid value for 'handler' option.  Must be 'google', 'mapbox', or a function.");
+    throw new TypeError("Invalid value for 'handler' option.  Must be 'google', 'mapbox', or a function.");
+  }
+
+  if (output && typeof output !== "string") {
+    throw new TypeError("Invalid value for output.  Needs to be a string filename.");
   }
 
   var geocoder = new Geocoder();
@@ -143,7 +147,7 @@ Geocoder.prototype.run = function(input,output,options) {
 
     try {
       result = options.handler(body,row[options.address]);
-    } catch(e) {
+    } catch (e) {
       _this.emit("row","Parsing error: "+e.toString(),row);
     }
 
@@ -192,18 +196,31 @@ Geocoder.prototype.run = function(input,output,options) {
         };
 
     if (!options.test) {
+
       if (typeof output === "string") {
+
         csv.write(output,results,summarize);
+
       } else {
+
         output = output || process.stdout;
+
         csv.stringify(results,function(string){
+
           try {
+
             output.write(string,summarize);
+
           } catch(e) {
+
             throw new TypeError("Second argument output needs to be a filename or a writeable stream.");
+
           }
-        })
+
+        });
+
       }
+
     } else {
       summarize();
     }
