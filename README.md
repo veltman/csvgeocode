@@ -209,7 +209,6 @@ The `process` function will be passed the body of the geocoder response. It shou
 * Add the NYC and TAMU geocoders as built-in handlers.
 * Support a CSV with no header row where `lat`, `lng`, and `address` are numerical indices instead of column names.
 * Allow `address` to be an array of multiple fields that get concatenated (e.g. `["street","city","state","zip"]`)
-* Support the `handler` option for CLI too?
 * Support both POST and GET requests somehow.
 
 ## Credits/License
