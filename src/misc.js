@@ -15,10 +15,6 @@ module.exports = {
         options.lng = key;
         continue;
       }
-      if (options.address === null && key.trim().match(/^(street[^a-z]*)?addr(ess)?$/i)) {
-        options.address = key;
-        continue;
-      }
     }
 
     if (options.lat === null) {

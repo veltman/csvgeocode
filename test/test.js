@@ -8,13 +8,14 @@ queue(1)
   .defer(columnNamesTest)
   .defer(addColumnsTest)
   .defer(handlerTest)
-  .defer(keyTest)
+  .defer(mapboxTest)
   .defer(throwTest)
   .awaitAll(function(){});
 
 function basicTest(cb) {
   geocode("test/basic.csv",{
-      test: true
+      test: true,
+      url: process.env.TEST_URL
     })
     .on("row",function(err,row){
       assert("address" in row && 
@@ -44,7 +45,8 @@ function basicTest(cb) {
 function cacheTest(cb) {
   geocode("test/basic.csv",{
       force: true,
-      test: true
+      test: true,
+      url: process.env.TEST_URL
     })
     .on("row",function(err,row){
       if (row.address === "CACHED GIBBERISH ADDRESS") {
@@ -64,7 +66,8 @@ function columnNamesTest(cb) {
   geocode("test/column-names.csv",{
       lat: "LERTITUDE",
       lng: "LANGITUDE",
-      test: true
+      test: true,
+      url: process.env.TEST_URL
     })
     .on("row",function(err,row){
       assert.deepEqual(row.lat,undefined);
@@ -84,7 +87,8 @@ function columnNamesTest(cb) {
 
 function addColumnsTest(cb) {
   geocode("test/column-names.csv",{
-      test: true
+      test: true,
+      url: process.env.TEST_URL
     })
     .on("row",function(err,row){
       if (err) {
@@ -101,13 +105,9 @@ function addColumnsTest(cb) {
 function handlerTest(cb) {
   geocode("test/basic.csv",{
       force: true,
-      handler: {
-        url: function(address,options){
-          return "http://www.yahoo.com/";
-        },
-        process: function(body) {
+      url: process.env.TEST_URL,
+      handler: function(body) {
           return "CUSTOM ERROR";
-        }
       },
       test: true
     })
@@ -126,6 +126,7 @@ function throwTest(cb) {
     function(){
       geocode("test/basic.csv",{
         test: true,
+        url: process.env.TEST_URL,
         handler: "dumb string"
       });
     },
@@ -141,11 +142,11 @@ function throwTest(cb) {
 
 }
 
-function mapboxTest(API_KEY,cb) {
+function mapboxTest(cb) {
 
   geocode("test/basic.csv",{
-      handler: mapboxHandler,
-      url: "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token=" + API_KEY,
+      handler: "mapbox",
+      url: process.env.MAPBOX_TEST_URL,
       test: true
     })
     .on("row",function(err,row){
@@ -156,25 +157,7 @@ function mapboxTest(API_KEY,cb) {
       }
     })
     .on("complete",function(summary){
-      cb(null);
-    });
-
-}
-
-function keyTest(cb) {
-
-  geocode("test/basic.csv",{
-      key: "INVALID_KEY",
-      test: true
-    })
-    .on("row",function(err,row){
-      if (err) {
-        assert.deepEqual(err,"REQUEST_DENIED");
-      } else {
-        assert(row.lat && row.lng);
-      }
-    })
-    .on("complete",function(summary){
+      assert.notDeepEqual(summary.successes,0,"Expected at least one success from Mapbox");
       cb(null);
     });
 

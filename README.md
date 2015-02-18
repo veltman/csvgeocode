@@ -3,7 +3,9 @@ csvgeocode
 
 For when you have a CSV with addresses and you want a lat/lng for every row.  Bulk geocode addresses a CSV with a few lines of code. 
 
-The defaults are configured to use [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.  Make sure that you use this in compliance with the relevant API's terms of service (Google's terms are [here](https://developers.google.com/maps/terms) and require any geocoding to be in conjunction with display on a Google Map).
+The defaults are configured for [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.  There are built in response handlers for Google, Mapbox, and Texas A & M's geocoders (details below).
+
+Make sure that you use this in compliance with the relevant API's terms of service.
 
 ## Basic command line usage
 
@@ -16,13 +18,13 @@ npm install -g csvgeocode
 Use it:
 
 ```
-$ csvgeocode path/to/input.csv path/to/output.csv
+$ csvgeocode path/to/input.csv path/to/output.csv --url "https://maps.googleapis.com/maps/api/geocode/json?address={{MY_ADDRESS_COLUMN_NAME}}&key=MY_API_KEY"
 ```
 
 If you don't specify an output file, the output will stream to stdout instead, so you can stream the result as an HTTP response or do something like:
 
 ```
-$ csvgeocode path/to/input.csv | grep "greppin for somethin"
+$ csvgeocode path/to/input.csv [options] | grep "greppin for somethin"
 ```
 
 ## Options
@@ -30,28 +32,28 @@ $ csvgeocode path/to/input.csv | grep "greppin for somethin"
 You can add extra options when running `csvgeocode`.  For example:
 
 ```
-$ csvgeocode input.csv output.csv --address MY_ADDRESS_COLUMN_HAS_THIS_WEIRD_NAME --delay 1000 --handler "mapbox" --key MY_API_KEY --verbose
+$ csvgeocode input.csv output.csv --url "MY_API_URL" --address MY_ADDRESS_COLUMN_HAS_THIS_WEIRD_NAME --delay 1000 --verbose
 ```
 
-None of the options are required.
+The only required option is `url`.  All others are optional.
+
+#### `--url [url]` (REQUIRED)
+
+A URL template with column names as Mustache tags, like:
+
+```
+http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{address}}.json?access_token=MY_API_KEY
+
+https://maps.googleapis.com/maps/api/geocode/json?address={{address}}&key=MY_API_KEY
+
+http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx?apiKey=MY_API_KEY&version=4.01&streetAddress={{address}}&city={{city}}&state={{state}}
+```
 
 #### `--handler [handler]`
 
-What API handler to use. Current built-in handlers are "google" and "mapbox". Contributions of handlers for other geocoders welcome! You can define a custom handler when using this as a Node module (see below).
+What handler function to process the API response with.  Current built-in handlers are "google" and "mapbox". Contributions of handlers for other geocoders are welcome! You can define a custom handler when using this as a Node module (see below).
 
 **Default:** `"google"`
-
-#### `--key [key]`
-
-The API key to use with requests.
-
-**Default:** none
-
-#### `--address [address column name]`
-
-The name of the column that contains the address to geocode.
-
-**Default:** Tries to automatically detect if there's a relevant column name in the input CSV, like `address` or `street_address`.
 
 #### `--lat [latitude column name]`
 
@@ -80,7 +82,7 @@ By default, if a lat/lng is already found in an input row, that will be kept.  I
 See extra output while csvgeocode is running.
 
 ```
-$ csvgeocode input.csv --verbose
+$ csvgeocode input.csv --url "MY_API_URL" --verbose
 ...
 160 Varick St, New York NY: SUCCESS
 1600 Pennsylvania Ave, Washington, DC: SUCCESS
@@ -105,17 +107,21 @@ Use it:
 var csvgeocode = require("csvgeocode");
 
 //stream to stdout
-csvgeocode("path/to/input.csv");
+csvgeocode("path/to/input.csv",{
+    url: "MY_API_URL"
+  });
 
 //write to a file
-csvgeocode("path/to/input.csv","path/to/output.csv");
+csvgeocode("path/to/input.csv","path/to/output.csv",{
+    url: "MY_API_URL"
+  });
 ```
 
 You can add all the same options in a script, except for `verbose`.
 
 ```js
 var options = {
-  "address": "MY_SPECIAL_ADDRESS_COLUMN_NAME",
+  "url": "MY_API_URL",
   "lat": "MY_SPECIAL_LATITUDE_COLUMN_NAME",
   "lng": "MY_SPECIAL_LONGITUDE_COLUMN_NAME",
   "delay": 1000,
@@ -135,7 +141,7 @@ csvgeocode("input.csv","output.csv",options);
 `row` is triggered when each row is processed. It passes a string error message if geocoding the row failed, and the row itself.
 
 ```js
-csvgeocode("input.csv")
+csvgeocode("input.csv",options)
   .on("row",function(err,row){
     if (err) {
       console.warn(err);
@@ -157,7 +163,7 @@ csvgeocode("input.csv")
 `complete` is triggered when all geocoding is done.  It passes a `summary` object with three properties: `failures`, `successes`, and `time`.
 
 ```js
-csvgeocoder("input.csv")
+csvgeocoder("input.csv",options)
   .on("complete",function(summary){
     /*
       `summary` is an object like:
@@ -176,27 +182,28 @@ You can use any basic geocoding service from within a Node script by supplying a
 
 The easiest way to see what a handler should look like is to look at [handlers.js](./src/handlers.js).
 
-A handler needs a `url` function and a `process` function, like:
+The handler function is passed the body of an API response and should either return a string error message or an object with `lat` and `lng` properties.
 
 ```js
-var customHandler = {
-  url: function(address,options) {
-    return "http://mygeocoder.com/?address="+encodeURIComponent(address)+"&api_key="+options.key;
-  },
-  process: function(body) {
-    if (body.results) {
-      return body.results[0];
-    } else {
-      return "NO MATCH";
-    }
+
+csvgeocoder("input.csv",{
+  url: "MY_API_URL",
+  handler: customHandler
+});
+
+function customHandler(body) {
+  //success, return a lat/lng
+  if (body.result) {
+    return {
+      lat: body.result.lat,
+      lng: body.result.lng
+    };
+  //failure, return a string
+  } else {
+    return "NO MATCH";
   }
 }
-
 ```
-
-The `url` function will get passed the address being geocoded and the current options and should return the URL to request for that address.
-
-The `process` function will be passed the body of the geocoder response. It should return a string error message if there's no lat/lng to use, or it should return an object with `lat` and `lng` properties.
 
 ## Some Alternatives
 
@@ -208,7 +215,6 @@ The `process` function will be passed the body of the geocoder response. It shou
 
 * Add the NYC and TAMU geocoders as built-in handlers.
 * Support a CSV with no header row where `lat`, `lng`, and `address` are numerical indices instead of column names.
-* Allow `address` to be an array of multiple fields that get concatenated (e.g. `["street","city","state","zip"]`)
 * Support both POST and GET requests somehow.
 
 ## Credits/License

@@ -6,6 +6,7 @@ var misc = require("./misc"),
     queue = require("queue-async"),
     extend = require("extend"),
     util = require("util"),
+    render = require("mustache").render,
     csv = require("./csv"),
     EventEmitter = require("events").EventEmitter;
 
@@ -38,12 +39,16 @@ function generate(inFile,outFile,userOptions) {
     } else {
       throw new Error("Invalid value for 'handler' option.  Must be the name of a built-in handler or a custom handler.");
     }
-  } else if (typeof options.handler.process !== "function" || typeof options.handler.url !== "function") {
+  } else if (typeof options.handler !== "function") {
     throw new TypeError("Invalid value for 'handler' option.  Must be the name of a built-in handler or a custom handler.");
   }
 
   if (output && typeof output !== "string") {
     throw new TypeError("Invalid value for output.  Needs to be a string filename.");
+  }
+
+  if (typeof options.url !== "string") {
+    throw new Error("'url' parameter is required.");
   }
 
   var geocoder = new Geocoder();
@@ -75,13 +80,9 @@ Geocoder.prototype.run = function(input,output,options) {
 
     //If there are unset column names,
     //try to discover them on the first data row
-    if (options.lat === null || options.lng === null || options.address === null) {
+    if (options.lat === null || options.lng === null) {
 
       options = misc.discoverOptions(options,parsed[0]);
-
-      if (options.address === null) {
-        throw new Error("Couldn't auto-detect address column.");
-      }
 
     }
 
@@ -95,9 +96,7 @@ Geocoder.prototype.run = function(input,output,options) {
 
   function codeRow(row,cb) {
 
-    if (row[options.address] === undefined) {
-      throw new Error("Couldn't find address column '"+options.address+"'");
-    }
+    var url = render(options.url,escape(row));
 
     //Doesn't need geocoding
     if (!options.force && misc.isNumeric(row[options.lat]) && misc.isNumeric(row[options.lng])) {
@@ -106,17 +105,17 @@ Geocoder.prototype.run = function(input,output,options) {
     }
 
     //Address is cached from a previous result
-    if (cache[row[options.address]]) {
+    if (cache[url]) {
 
-      row[options.lat] = cache[row[options.address]].lat;
-      row[options.lng] = cache[row[options.address]].lng;
+      row[options.lat] = cache[url].lat;
+      row[options.lng] = cache[url].lng;
 
       _this.emit("row",null,row);
       return cb(null,row);
 
     }
 
-    request.get(options.handler.url(row[options.address],options),function(err,response,body) {
+    request.get(url,function(err,response,body) {
     
       //Some other error
       if (err) {
@@ -131,7 +130,7 @@ Geocoder.prototype.run = function(input,output,options) {
 
       } else {
 
-        handleResponse(body,row,cb);
+        handleResponse(body,row,url,cb);
 
       }
 
@@ -140,12 +139,12 @@ Geocoder.prototype.run = function(input,output,options) {
   }
 
 
-  function handleResponse(body,row,cb) {
+  function handleResponse(body,row,url,cb) {
 
     var result;
 
     try {
-      result = options.handler.process(body);
+      result = options.handler(body);
     } catch (e) {
       _this.emit("row","Parsing error: "+e.toString(),row);
     }
@@ -165,7 +164,7 @@ Geocoder.prototype.run = function(input,output,options) {
       row[options.lng] = result.lng;
 
       //Cache the result
-      cache[row[options.address]] = result;
+      cache[url] = result;
       _this.emit("row",null,row);
 
     //Unknown extraction error
@@ -228,6 +227,16 @@ Geocoder.prototype.run = function(input,output,options) {
 
   function successful(row) {
     return misc.isNumeric(row[options.lat]) && misc.isNumeric(row[options.lng]);
+  }
+
+  function escape(row) {
+    var escaped = extend({},row);
+
+    for (var key in escaped) {
+      escaped[key] = escaped[key].replace(/ /g,"+").replace(/[&]/g,"%26")
+    }
+
+    return escaped;
   }
 
 };
