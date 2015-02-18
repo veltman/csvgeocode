@@ -1,11 +1,11 @@
 csvgeocode
 ==========
 
-Bulk geocode addresses in a CSV with one or two lines of code.
+For when you have a CSV with addresses and you want a lat/lng for every row.  Bulk geocode addresses a CSV with one or two lines of code. 
 
-The defaults are configured to use Google's geocoder but it can be configured to work with any other similar geocoding service.
+The defaults are configured to use [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.
 
-## Basics: command line usage
+## Basic command line usage
 
 Install globally via npm:
 
@@ -19,141 +19,53 @@ Use it:
 $ csvgeocode path/to/input.csv path/to/output.csv
 ```
 
-## Basics: use as a node module
-
-Install via `npm`:
+If you don't specify an output file, the output will stream to stdout instead, so you can do something like:
 
 ```
-npm install csvgeocode
-````
-
-Use it:
-
-```js
-var csvgeocode = require("csvgeocode");
-
-//Write a new CSV with lat/lng columns added
-csvgeocode("path/to/input.csv","path/to/output.csv");
-```
-
-## Details
-
-You can specify an input CSV, an output CSV, and some options.  Only an input CSV is required.  If no output CSV is specified, the output will stream to stdout, so you could do something like:
-
-```
-$ csvgeocode input.csv | grep "greppin for somethin"
-```
-
-You can supply options to the command line version with `--option-name value` or in a script using a hash of options.
-
-From the command line:
-
-```
-$ csvgeocode input.csv output.csv --delay 1000 --address MY_ADDRESS_COLUMN_NAME
-```
-
-In a script:
-
-```js
-csvgeocode("input.csv","output.csv",{
-   address: "MY_ADDRESS_COLUMN_NAME",
-   delay: 1000
-});
+$ csvgeocode path/to/input.csv | grep "greppin for somethin"
 ```
 
 ## Options
 
-The following options are available.  NONE ARE REQUIRED.
-
-#### `address`
-
-The name of the column that contains the address to geocode.  This column must exist in the input CSV.
-
-**Default:** Automatically detect if there's a relevant column name in the input CSV, like `address` or `street_address`.
+You can add extra options when running `csvgeocode`.  For example:
 
 ```
-$ csvgeocode input.csv output.csv --address MY_ADDRESS_COLUMN_HAS_THIS_DUMB_NAME
+$ csvgeocode input.csv output.csv --address MY_ADDRESS_COLUMN_HAS_THIS_WEIRD_NAME --delay 1000 --verbose
 ```
 
-```js
-csvgeocode("input.csv","output.csv",{
-  address: "MY_ADDRESS_COLUMN_HAS_THIS_DUMB_NAME"
-});
-```
+None of the options are required.
 
-#### `lat`
+#### `--address [address column name]`
+
+The name of the column that contains the address to geocode.
+
+**Default:** Tries to automatically detect if there's a relevant column name in the input CSV, like `address` or `street_address`.
+
+#### `--lat [latitude column name]`
 
 The name of the column that should contain the resulting latitude.  If this column doesn't exist in the input CSV, it will be created in the output.
 
-**Default:** Automatically detects if there is a relevant column name in the input CSV, like `lat` or `latitude`.  If none is found, it will add the new column `lat` to the output.
+**Default:** Tries to automatically detect if there is a relevant column name in the input CSV, like `lat` or `latitude`.  If none is found, it will add the new column `lat` to the output.
 
-```
-$ csvgeocode input.csv output.csv --lat MY_EXISTING_LATITUDE_COLUMN
-```
-
-```
-$ csvgeocode input.csv output.csv --lat THIS_COLUMN_DOES_NOT_EXIST_YET_BUT_WILL_BE_CREATED
-```
-
-```js
-csvgeocode("input.csv","output.csv",{
-  lat: "MY_LATITUDE_COLUMN_NAME"
-});
-```
-
-#### `lng`
+#### `--lng [longitude column name]`
 
 The name of the column that should contain the resulting longitude.  If this column doesn't exist in the input CSV, it will be created in the output.
 
-**Default:** Automatically detects if there is a relevant column name in the input CSV, like `lng` or `longitude`.  If none is found, it will add the new column `lng` to the output.
+**Default:** Tries to automatically detect if there is a relevant column name in the input CSV, like `lng` or `longitude`.  If none is found, it will add the new column `lng` to the output.
 
-```
-$ csvgeocode input.csv output.csv --lng MY_EXISTING_LONGITUDE_COLUMN
-```
-
-```
-$ csvgeocode input.csv output.csv --lat THIS_COLUMN_DOES_NOT_EXIST_YET_BUT_WILL_BE_CREATED
-```
-
-```js
-csvgeocode("input.csv","output.csv",{
-  lng: "MY_LONGITUDE_COLUMN_NAME"
-});
-```
-
-#### `delay`
+#### `--delay [milliseconds]`
 
 The number of milliseconds to wait between geocoding calls.  Setting this to 0 is probably a bad idea because most geocoders limit how fast you can make requests.
 
-```
-$ csvgeocode input.csv output.csv --delay 500
-```
+**Default:** 250
 
-```js
-csvgeocode("input.csv","output.csv",{
-  delay: 500
-});
-```
+#### `--force`
 
-#### `force`
+By default, if a lat/lng is already found in an input row, that will be kept.  If you want to re-geocode every row no matter what and replace any lat/lngs that already exist, add `--force`.  This means you'll hit API limits faster and the process will take longer.
 
-By default, if a lat/lng is already found in an input row, that will be preserved.  Set `force` if you want to re-geocode every row even if an existing lat/lng is detected.  Forcing means you'll hit API limits faster and the process will take longer.
+#### `--verbose`
 
-**Default:** `false`
-
-```
-$ csvgeocode input.csv output.csv --force
-```
-
-```js
-csvgeocode("input.csv","output.csv",{
-  force: true
-});
-```
-
-#### `verbose`
-
-When using the command line version, supply `--verbose` to see extra output while csvgeocode is running.
+See extra output while csvgeocode is running.
 
 ```
 $ csvgeocode input.csv output.csv --verbose
@@ -168,30 +80,98 @@ Time elapsed: 1.8 seconds
 
 #### `url`
 
-The URL template to use for geocoding.  The placeholder `{{a}}` will be replaced by each individual address.  You might want to use this to add extra arguments to a Google geocoding request, like bounds.  If you want to use a different geocoder entirely, you should only use it in a script (see "Using a different geocoder" below).
+The URL template to use for geocoding.  The placeholder `{{a}}` will be replaced by each individual address.  You might want to use this to add extra arguments to a Google geocoding request, like bounds.  If you want to use a different geocoder entirely, you can do that by using `csvgeocode` as a Node module (see below).
 
 **Default:** `https://maps.googleapis.com/maps/api/geocode/json?address={{a}}`
 
+## Using as a Node module
+
+Install via `npm`:
+
 ```
-$ csvgeocode input.csv -output.csv --url "https://maps.googleapis.com/maps/api/geocode/json?bounds=40,-74|41,-72&address={{a}}"
+npm install csvgeocode
 ```
 
-#### `handler`
+Use it:
 
-What handler function to use with the geocoding API response.  Acceptable values are `"google"` or a custom handler function.
+```js
+var csvgeocode = require("csvgeocode");
 
-A custom handler function will get two arguments: the response body and the address being geocoded.  It should return an object with `lat` and `lng` properties when successful.  Otherwise it should return a string error message.  For details, see "Using a different geocoder" below.
+csvgeocode("path/to/input.csv","path/to/output.csv");
+```
 
-**Default:** `"google"`
+You can add all the same options in a script, except for `verbose`.
 
-## Using a different geocoder
+```js
+var options = {
+  "address": "MY_SPECIAL_ADDRESS_COLUMN_NAME",
+  "lat": "MY_SPECIAL_LATITUDE_COLUMN_NAME",
+  "lng": "MY_SPECIAL_LONGITUDE_COLUMN_NAME",
+  "delay": 1000,
+  "force": true,
+  "url": "https://maps.googleapis.com/maps/api/geocode/json?bounds=40,-74|41,-72&address={{a}}"
+};
 
-To use a geocoding API besides Google's, you need to use csvgeocode in a script and supply custom `url` and `handler` options.  For example, if you wanted to use the Mapbox geocoder, you would do something like:
+//write to a file
+csvgeocode("input.csv","output.csv",options);
+
+//stream to stdout
+csvgeocode("input.csv",options);
+```
+`csvgeocode` runs asynchronously, but you can listen for two events: `row` and `complete`.
+
+`row` is triggered when each row is processed. It passes a string error message if geocoding the row failed, and the row itself.
+
+```js
+csvgeocode("input.csv","output.csv")
+  .on("row",function(err,row){
+    if (err) {
+      console.warn(err);
+    }
+    /*
+      `row` is an object like:
+      {
+        first: "John",
+        last: "Keefe",
+        address: "160 Varick St, New York NY",
+        employer: "WNYC",
+        lat: 40.7267926,
+        lng: -74.00537369999999
+      }
+    */
+  });
+```
+
+`complete` is triggered when all geocoding is done.  It passes a `summary` object with three properties: `failures`, `successes`, and `time`.
+
+```js
+csvgeocoder("input.csv","output.csv")
+  .on("complete",function(summary){
+    /*
+      `summary` is an object like:
+      {
+        failures: 1, //1 row failed
+        successes: 49, //49 rows succeeded
+        time: 8700 //it took 8.7 seconds
+      }
+    */
+  });
+```
+
+## Using a non-Google geocoder
+
+You can use a non-Google geocoder from within a Node script by customizing the `url` option and adding a custom function as the `handler` option.
+
+Your handler will be passed two string arguments: the body of the geocoder response and the address being geocoded.
+
+It should return a string error message if there's no lat/lng to use, or it should return an object with `lat` and `lng` properties.
+
+For example, if you wanted to use [Mapbox's geocoder](https://www.mapbox.com/developers/api/geocoding/) instead, you could run it like this:
 
 ```js
 csvgeocode("input.csv","output.csv",{
-  url: "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token=MY_API_KEY",
-  handler: mapboxHandler
+  url: "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token=MY_API_KEY", //custom URL template
+  handler: mapboxHandler //custom handler function
 });
 
 function mapboxHandler(body,address) {
@@ -201,12 +181,12 @@ function mapboxHandler(body,address) {
   //Error, return a string
   if (result.features === undefined) {
 
-    return "[ERROR] "+response.message;
+    return response.message;
 
   //No results, return a string
-  } else if (!ressult.features.length) {
+  } else if (!result.features.length) {
 
-    return "[NO MATCH] "+address;
+    return "No match for " + address;
 
   }
 
@@ -217,48 +197,11 @@ function mapboxHandler(body,address) {
   };
 
 }
-
-```
-
-## Events
-
-If you're using csvgeocode as a module in a script, you can listen for two events: `row` and `complete`.
-
-`row` is emitted whenever a row in the input CSV is processed.  It passes two arguments: a string error message if the geocoding failed (`null` if it was successful), and the row itself.
-
-`complete` is emitted when all rows are done, and includes a summary object with `failures`, `successes`, and `time` properties.
-
-```js
-csvgeocoder("input.csv","output.csv")
-  .on("row",function(error,row){
-    /*
-    `error` will be a string if geocoding failed or null if it succeeded
-    `row` will be a hash of the row like:
-      {
-        first: "John",
-        last: "Keefe",
-        address: "160 Varick St, New York NY",
-        employer: "WNYC",
-        lat: 40.7267926,
-        lng: -74.00537369999999
-      }
-  })
-  .on("complete",function(summary){
-    /*
-    Summary is an object like:
-      {
-        failures: 1, //1 row failed
-        successes: 49, //49 rows succeeded
-        time: 8700 //it took 8.7 seconds
-      }
-    */
-  });
-
 ```
 
 ## Notes
 
-Geocoding a long list of unsanitized addresses rarely goes perfectly the first time.  Using csvgeocode, any addresses that don't succeed will have their lat/lng columns left blank.  By listening for the `failure` event (or just browsing the results), you can figure out which ones failed and edit them as needed.  Then you can run the result back through and only the failed rows will get re-geocoded.
+Geocoding a long list of unsanitized addresses rarely goes perfectly the first time.  Using csvgeocode, any addresses that don't succeed will have their lat/lng columns left blank.  By listening for the `row` event or browsing the final results, you can figure out which ones failed and edit them as needed.  Then you can run the result back through and only the failed rows will get re-geocoded.
 
 ## To Do
 
@@ -266,9 +209,8 @@ Geocoding a long list of unsanitized addresses rarely goes perfectly the first t
 * Support a CSV with no header row where `lat`, `lng`, and `address` are numerical indices instead of column names.
 * Allow `address` to be an array of multiple fields that get concatenated (e.g. `["street","city","state","zip"]`)
 * Make `bounds` a separate option rather than something you have to hardcore into the URL.
-* Support the `handler` option for CLI too.
+* Support the `handler` option for CLI too?
 * Support both POST and GET requests somehow.
-* Rather than streams, just use a callback-based parser+stringifier.  Makes more sense for modest amounts of data anyway.
 
 ## Credits/License
 
