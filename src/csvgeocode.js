@@ -36,10 +36,10 @@ function generate(inFile,outFile,userOptions) {
     if (handlers[options.handler]) {
       options.handler = handlers[options.handler];
     } else {
-      throw new Error("Invalid value for 'handler' option.  Must be 'google', 'mapbox', or a function.");
+      throw new Error("Invalid value for 'handler' option.  Must be the name of a built-in handler or a custom handler.");
     }
-  } else if (typeof options.handler !== "function") {
-    throw new TypeError("Invalid value for 'handler' option.  Must be 'google', 'mapbox', or a function.");
+  } else if (typeof options.handler.process !== "function" || typeof options.handler.url !== "function") {
+    throw new TypeError("Invalid value for 'handler' option.  Must be the name of a built-in handler or a custom handler.");
   }
 
   if (output && typeof output !== "string") {
@@ -116,7 +116,7 @@ Geocoder.prototype.run = function(input,output,options) {
 
     }
 
-    request.get(misc.url(options.url,row[options.address]),function(err,response,body) {
+    request.get(misc.url(options,row[options.address]),function(err,response,body) {
     
       //Some other error
       if (err) {
@@ -145,7 +145,7 @@ Geocoder.prototype.run = function(input,output,options) {
     var result;
 
     try {
-      result = options.handler(body,row[options.address]);
+      result = options.handler.process(body,row[options.address]);
     } catch (e) {
       _this.emit("row","Parsing error: "+e.toString(),row);
     }

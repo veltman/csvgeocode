@@ -19,7 +19,7 @@ Use it:
 $ csvgeocode path/to/input.csv path/to/output.csv
 ```
 
-If you don't specify an output file, the output will stream to stdout instead, so you can do something like:
+If you don't specify an output file, the output will stream to stdout instead, so you can stream the result as an HTTP response or do something like:
 
 ```
 $ csvgeocode path/to/input.csv | grep "greppin for somethin"
@@ -34,6 +34,12 @@ $ csvgeocode input.csv output.csv --address MY_ADDRESS_COLUMN_HAS_THIS_WEIRD_NAM
 ```
 
 None of the options are required.
+
+#### `--handler [handler]`
+
+What API handler to use. Current built-in handlers are "google" and "mapbox". Contributions of handlers for other geocoders welcome! You can define a custom handler when using this as a Node module (see below).
+
+**Default:** `"google"`
 
 #### `--address [address column name]`
 
@@ -68,7 +74,8 @@ By default, if a lat/lng is already found in an input row, that will be kept.  I
 See extra output while csvgeocode is running.
 
 ```
-$ csvgeocode input.csv output.csv --verbose
+$ csvgeocode input.csv --verbose
+...
 160 Varick St, New York NY: SUCCESS
 1600 Pennsylvania Ave, Washington, DC: SUCCESS
 123 Fictional St: NO MATCH
@@ -77,12 +84,6 @@ Rows geocoded: 2
 Rows failed: 1
 Time elapsed: 1.8 seconds
 ```
-
-#### `url`
-
-The URL template to use for geocoding.  The placeholder `{{a}}` will be replaced by each individual address.  You might want to use this to add extra arguments to a Google geocoding request, like bounds.  If you want to use a different geocoder entirely, you can do that by using `csvgeocode` as a Node module (see below).
-
-**Default:** `https://maps.googleapis.com/maps/api/geocode/json?address={{a}}`
 
 ## Using as a Node module
 
@@ -109,21 +110,22 @@ var options = {
   "lng": "MY_SPECIAL_LONGITUDE_COLUMN_NAME",
   "delay": 1000,
   "force": true,
-  "url": "https://maps.googleapis.com/maps/api/geocode/json?bounds=40,-74|41,-72&address={{a}}"
+  "handler": "mapbox"
 };
-
-//write to a file
-csvgeocode("input.csv","output.csv",options);
 
 //stream to stdout
 csvgeocode("input.csv",options);
+
+//write to a file
+csvgeocode("input.csv","output.csv",options);
 ```
+
 `csvgeocode` runs asynchronously, but you can listen for two events: `row` and `complete`.
 
 `row` is triggered when each row is processed. It passes a string error message if geocoding the row failed, and the row itself.
 
 ```js
-csvgeocode("input.csv","output.csv")
+csvgeocode("input.csv")
   .on("row",function(err,row){
     if (err) {
       console.warn(err);
@@ -145,7 +147,7 @@ csvgeocode("input.csv","output.csv")
 `complete` is triggered when all geocoding is done.  It passes a `summary` object with three properties: `failures`, `successes`, and `time`.
 
 ```js
-csvgeocoder("input.csv","output.csv")
+csvgeocoder("input.csv")
   .on("complete",function(summary){
     /*
       `summary` is an object like:
@@ -158,46 +160,17 @@ csvgeocoder("input.csv","output.csv")
   });
 ```
 
-## Using a non-Google geocoder
+## Using a custom geocoder
 
-You can use a non-Google geocoder from within a Node script by customizing the `url` option and adding a custom function as the `handler` option.
+You can use any basic geocoding service from within a Node script by supplying a custom handler.
 
-Your handler will be passed two string arguments: the body of the geocoder response and the address being geocoded.
+The easiest way to see what a handler should look like is to look at [handlers.js](./src/handlers.js).
 
-It should return a string error message if there's no lat/lng to use, or it should return an object with `lat` and `lng` properties.
+A handler needs a `url` template and a `process` function.
 
-For example, if you wanted to use [Mapbox's geocoder](https://www.mapbox.com/developers/api/geocoding/) instead, you could run it like this:
+In the `url` template, the placeholders `{{a}}` and `{{k}}` will be replaced by an individual address and your API key, respectively.  For example, the built-in Mapbox handler assumes the URL template `http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token={{k}}`.
 
-```js
-csvgeocode("input.csv","output.csv",{
-  url: "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{a}}.json?access_token=MY_API_KEY", //custom URL template
-  handler: mapboxHandler //custom handler function
-});
-
-function mapboxHandler(body,address) {
-
-  var result = JSON.parse(body);
-
-  //Error, return a string
-  if (result.features === undefined) {
-
-    return response.message;
-
-  //No results, return a string
-  } else if (!result.features.length) {
-
-    return "No match for " + address;
-
-  }
-
-  //Success, return a lat/lng object
-  return {
-    lat: result.features[0].center[1],
-    lng: result.features[0].center[0]
-  };
-
-}
-```
+The `process` function will be passed two string arguments: the body of the geocoder response and the address being geocoded.  It should return a string error message if there's no lat/lng to use, or it should return an object with `lat` and `lng` properties.
 
 ## Some Alternatives
 
