@@ -207,7 +207,7 @@ function mapboxHandler(body,address) {
 
 ## To Do
 
-* Add the NYC, Mapbox, and TAMU geocoders as a built-in handler.
+* Add the NYC, Mapbox, and TAMU geocoders as built-in handlers.
 * Support a CSV with no header row where `lat`, `lng`, and `address` are numerical indices instead of column names.
 * Allow `address` to be an array of multiple fields that get concatenated (e.g. `["street","city","state","zip"]`)
 * Support the `handler` option for CLI too?
