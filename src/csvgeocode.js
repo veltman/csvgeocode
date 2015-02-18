@@ -96,8 +96,7 @@ Geocoder.prototype.run = function(input,output,options) {
   function codeRow(row,cb) {
 
     if (row[options.address] === undefined) {
-      _this.emit("row","Couldn't find address column '"+options.address+"'",row);
-      return cb(null,row);
+      throw new Error("Couldn't find address column '"+options.address+"'");
     }
 
     //Doesn't need geocoding
