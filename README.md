@@ -30,7 +30,7 @@ $ csvgeocode path/to/input.csv | grep "greppin for somethin"
 You can add extra options when running `csvgeocode`.  For example:
 
 ```
-$ csvgeocode input.csv output.csv --address MY_ADDRESS_COLUMN_HAS_THIS_WEIRD_NAME --delay 1000 --verbose
+$ csvgeocode input.csv output.csv --address MY_ADDRESS_COLUMN_HAS_THIS_WEIRD_NAME --delay 1000 --handler "mapbox" --key MY_API_KEY --verbose
 ```
 
 None of the options are required.
