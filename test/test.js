@@ -4,6 +4,7 @@ var assert = require("assert"),
 
 queue(1)
   .defer(basicTest)
+  .defer(requiredTest)
   .defer(cacheTest)
   .defer(columnNamesTest)
   .defer(addColumnsTest)
@@ -41,6 +42,27 @@ function basicTest(cb) {
       assert.deepEqual(summary.successes,6,"Expected 6 successes");
       cb(null);
     });
+}
+
+function requiredTest(cb) {
+
+
+  assert.throws(
+    function(){
+      geocode("test/basic.csv",{
+        test: true
+      });
+    },
+    function(err) {
+      if (err instanceof Error && /url/i.test(err)) {
+        return true;
+      }
+    },
+    "Expected required url message"
+  );
+
+  cb(null);
+
 }
 
 function cacheTest(cb) {
@@ -94,9 +116,8 @@ function addColumnsTest(cb) {
     .on("row",function(err,row){
       if (err) {
         assert.deepEqual(err,"NO MATCH","Expected NO MATCH in add columns test.");
-      } else {
-        assert("lat" in row && "lng" in row);
       }
+      assert("lat" in row && "lng" in row);
     })
     .on("complete",function(summary){
       cb(null);

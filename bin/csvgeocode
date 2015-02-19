@@ -4,6 +4,7 @@ var path = require("path"),
     csv = require("dsv")(","),
     yargs = require("yargs")
     .usage("Usage: geocode [options] [input CSV] [output CSV]")
+    .demand(["url"])
     .describe("url","[REQUIRED] A URL template to use, with column names from your input CSV surrounded by {{}}. Example: http://mygeocoder.com/?address={{STREET_ADDRESS}}&apiKey=123ABC")
     .describe("lat","Latitude column name. Default: automatic detection")
     .describe("lng","Longitude column name. Default: automatic detection")
@@ -33,10 +34,8 @@ if (args.help || !args._ || !args._.length) {
   return yargs.showHelp();
 }
 
-for (var key in options) {
-  if (key in args) {
-    options[key] = args[key];
-  }
+for (var key in args) {
+  options[key] = args[key];
 }
 
 //They specified an output file
@@ -51,9 +50,9 @@ if (args._.length > 1) {
 
 if (args.verbose) {
 
-  geocoder.on("row",function(err,row,url){
-      console.warn(csv.format([row]));
-      console.warn(err || "SUCCESS");
+  geocoder.on("row",function(err,row){
+      console.warn(csv.formatRows([csv.parseRows(csv.format([row]))[1]]));
+      console.warn((err || "SUCCESS")+"\n");
     })
     .on("complete",function(summary){
       console.warn("\nRows geocoded: "+summary.successes+"\n"+

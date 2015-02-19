@@ -3,7 +3,7 @@ csvgeocode
 
 For when you have a CSV with addresses and you want a lat/lng for every row.  Bulk geocode addresses a CSV with a few lines of code. 
 
-The defaults are configured for [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.  There are built in response handlers for Google, Mapbox, and Texas A & M's geocoders (details below).
+The defaults are configured for [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.  There are built-in response handlers for [Google](https://developers.google.com/maps/documentation/geocoding/), [Mapbox](https://www.mapbox.com/developers/api/geocoding/), and [Texas A & M's](http://geoservices.tamu.edu/Services/Geocode/WebService/) geocoders (details below).
 
 Make sure that you use this in compliance with the relevant API's terms of service.
 
@@ -32,7 +32,7 @@ $ csvgeocode path/to/input.csv [options] | grep "greppin for somethin"
 You can add extra options when running `csvgeocode`.  For example:
 
 ```
-$ csvgeocode input.csv output.csv --url "MY_API_URL" --address MY_ADDRESS_COLUMN_HAS_THIS_WEIRD_NAME --delay 1000 --verbose
+$ csvgeocode input.csv output.csv --url "http://someurl.com/" --lat CALL_MY_LATITUDE_COLUMN_THIS_SPECIAL_NAME --delay 1000 --verbose
 ```
 
 The only required option is `url`.  All others are optional.
@@ -51,7 +51,14 @@ http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNo
 
 #### `--handler [handler]`
 
-What handler function to process the API response with.  Current built-in handlers are "google" and "mapbox". Contributions of handlers for other geocoders are welcome! You can define a custom handler when using this as a Node module (see below).
+What handler function to process the API response with.  Current built-in handlers are `"google"`, `"mapbox"`, and `"tamu"`. Contributions of handlers for other geocoders are welcome! You can define a custom handler when using this as a Node module (see below).
+
+Examples:
+```
+$ csvgeocode input.csv --url "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{MY_ADDRESS_COLUMN_NAME}}.json?access_token=123ABC" --handler mapbox
+
+$ csvgeocode input.csv --url "http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx?version=4.01&streetAddress={{ADDR}}&city={{CITY}}&state={{STATE}}&apiKey=123ABC" --handler tamu
+```
 
 **Default:** `"google"`
 
@@ -59,13 +66,13 @@ What handler function to process the API response with.  Current built-in handle
 
 The name of the column that should contain the resulting latitude.  If this column doesn't exist in the input CSV, it will be created in the output.
 
-**Default:** Tries to automatically detect if there is a relevant column name in the input CSV, like `lat` or `latitude`.  If none is found, it will add the new column `lat` to the output.
+**Default:** Tries to automatically detect if there is a relevant existing column name in the input CSV, like `lat` or `latitude`.  If none is found, it will use `lat`.
 
 #### `--lng [longitude column name]`
 
 The name of the column that should contain the resulting longitude.  If this column doesn't exist in the input CSV, it will be created in the output.
 
-**Default:** Tries to automatically detect if there is a relevant column name in the input CSV, like `lng` or `longitude`.  If none is found, it will add the new column `lng` to the output.
+**Default:** Tries to automatically detect if there is a relevant existing column name in the input CSV, like `lng` or `longitude`.  If none is found, it will use `lng`.
 
 #### `--delay [milliseconds]`
 
@@ -83,10 +90,14 @@ See extra output while csvgeocode is running.
 
 ```
 $ csvgeocode input.csv --url "MY_API_URL" --verbose
-...
-160 Varick St, New York NY: SUCCESS
-1600 Pennsylvania Ave, Washington, DC: SUCCESS
-123 Fictional St: NO MATCH
+160 Varick St,New York,NY
+SUCCESS
+
+1600 Pennsylvania Ave,Washington,DC
+SUCCESS
+
+123 Fictional St,Noncity,XY
+NO MATCH
 
 Rows geocoded: 2
 Rows failed: 1
@@ -213,8 +224,8 @@ function customHandler(body) {
 
 ## To Do
 
-* Add the NYC and TAMU geocoders as built-in handlers.
-* Support a CSV with no header row where `lat`, `lng`, and `address` are numerical indices instead of column names.
+* Add the NYC geocoder as a built-in handler.
+* Support a CSV with no header row where `lat` and `lng` are numerical indices instead of column names.
 * Support both POST and GET requests somehow.
 
 ## Credits/License
