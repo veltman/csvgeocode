@@ -1,3 +1,5 @@
+var csv = require("dsv")(",");
+
 module.exports = {
   google: function(body) {
 
@@ -31,6 +33,30 @@ module.exports = {
       lat: response.features[0].center[1],
       lng: response.features[0].center[0]
     };
+
+  },
+  tamu: function(body) {
+
+    var parsed;
+
+    try {
+      parsed = csv.parseRows(body);
+    } catch(e) {
+      return "ERROR PARSING RESPONSE: "+body;
+    }
+
+    if (parsed[0].length < 5) {
+      return "UNEXPECTED RESPONSE FORMAT FROM TAMU GEOCODER: "+csv.formatRows([parsed[0]]);
+    }
+
+    if (!parsed.length || +parsed[0][2] !== 200 || !+parsed[0][3] || !+parsed[0][4]) {
+      return "NO MATCH";
+    }
+
+    return {
+      lat: parsed[0][3],
+      lng: parsed[0][4]
+    }
 
   }
 };

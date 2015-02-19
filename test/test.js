@@ -10,6 +10,7 @@ queue(1)
   .defer(handlerTest)
   .defer(mapboxTest)
   .defer(throwTest)
+  .defer(tamuTest)
   .awaitAll(function(){});
 
 function basicTest(cb) {
@@ -158,6 +159,28 @@ function mapboxTest(cb) {
     })
     .on("complete",function(summary){
       assert.notDeepEqual(summary.successes,0,"Expected at least one success from Mapbox");
+      cb(null);
+    });
+
+}
+
+function tamuTest(cb) {
+
+  geocode("test/parts.csv",{
+      handler: "tamu",
+      url: process.env.TAMU_TEST_URL,
+      test: true
+    })
+    .on("row",function(err,row){
+      if (err) {
+        assert.deepEqual(err,"NO MATCH","Expected NO MATCH from tamuHandler.");
+      } else {
+        assert(row.lat && row.lng);
+      }
+    })
+    .on("complete",function(summary){
+      assert.deepEqual(summary.successes,2,"Expected two successes from TAMU.");
+      assert.deepEqual(summary.failures,1,"Expected one failure from TAMU.");
       cb(null);
     });
 

@@ -1,6 +1,5 @@
 var fs = require("fs"),
-    parse = require("csv-parse"),
-    stringify = require("csv-stringify");
+    csv = require("dsv")(",");
 
 module.exports = {
   read: function(filename,cb) {
@@ -10,44 +9,18 @@ module.exports = {
         throw new Error(err);
       }
 
-      _parse(raw,cb);
+      cb(csv.parse(raw));
 
     });
   },
   write: function(filename,rows,cb) {
-    _stringify(rows,function(string){
-      fs.writeFile(filename,string,function(err){
-        if (err) {
-          throw new Error(err);
-        };
-        cb();
-      });
+    fs.writeFile(filename,csv.format(rows),function(err){
+      if (err) {
+        throw new Error(err);
+      };
+      cb();
     });
   },
-  parse: _parse,
-  stringify: _stringify
+  parse: csv.parse,
+  stringify: csv.format
 };
-
-function _parse(raw,cb) {
-
-  parse(raw,{columns:true},function(err,parsed){
-    if (err) {
-      throw new Error(err);
-    }
-
-    cb(parsed);
-  });
-
-}
-
-function _stringify(rows,cb) {
-
-  stringify(rows,{header:true},function(err,string){
-    if (err) {
-      throw new Error(err);
-    }
-
-    cb(string);
-  });
-
-}

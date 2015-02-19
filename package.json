@@ -29,9 +29,9 @@
   },
   "homepage": "https://github.com/veltman/csvgeocode",
   "dependencies": {
-    "csv-parse": "0.0.6",
-    "csv-stringify": "0.0.6",
+    "dsv": "0.0.4",
     "extend": "^2.0.0",
+    "mustache": "^1.1.0",
     "queue-async": "^1.0.7",
     "request": "^2.53.0",
     "yargs": "^3.0.4"
