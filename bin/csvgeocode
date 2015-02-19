@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
 var path = require("path"),
+    csv = require("dsv")(","),
     yargs = require("yargs")
     .usage("Usage: geocode [options] [input CSV] [output CSV]")
+    .describe("url","[REQUIRED] A URL template to use, with column names from your input CSV surrounded by {{}}. Example: http://mygeocoder.com/?address={{STREET_ADDRESS}}&apiKey=123ABC")
     .describe("lat","Latitude column name. Default: automatic detection")
     .describe("lng","Longitude column name. Default: automatic detection")
-    .describe("address","Address column name. Default: automatic detection")
     .describe("delay","Milliseconds to wait between API calls. Default: 250")
     .describe("force","Re-geocode every row even if a lat/lng already exists")
     .describe("verbose","Show some information while csvgeocode is running")
-    .describe("key","API key to use. Default: none")
-    .describe("handler","What API handler to use.  Current built-in options are 'mapbox' and 'google'.  Default: 'google'")
+    .describe("handler","What API handler to use.  Current built-in options are 'mapbox', 'google', and 'tamu'.  Default: 'google'")
     .describe("help","Show this message")
     .boolean(["force","verbose","help"])
-    .string(["_","lat","lng","address","url"])
+    .string(["_","lat","lng","url"])
     .check(function(argv) {
 
       if (argv.help) return;
@@ -51,12 +51,9 @@ if (args._.length > 1) {
 
 if (args.verbose) {
 
-  geocoder.on("row",function(err,row){
-      var address = "";
-      if (row[geocoder.options.address]) {
-        address = row[geocoder.options.address]+": ";
-      }
-      console.warn(address+(err || "SUCCESS"));
+  geocoder.on("row",function(err,row,url){
+      console.warn(csv.format([row]));
+      console.warn(err || "SUCCESS");
     })
     .on("complete",function(summary){
       console.warn("\nRows geocoded: "+summary.successes+"\n"+
