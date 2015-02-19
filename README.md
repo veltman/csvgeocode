@@ -39,7 +39,7 @@ The only required option is `url`.  All others are optional.
 
 #### `--url [url]` (REQUIRED)
 
-A URL template with column names as Mustache tags, like:
+A URL template with column names as [Mustache tags](http://mustache.github.io/), like:
 
 ```
 http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{address}}.json?access_token=MY_API_KEY
@@ -209,10 +209,10 @@ function customHandler(body) {
       lat: body.result.lat,
       lng: body.result.lng
     };
-  //failure, return a string
-  } else {
-    return "NO MATCH";
   }
+
+  //failure, return a string
+  return "NO MATCH";
 }
 ```
 
