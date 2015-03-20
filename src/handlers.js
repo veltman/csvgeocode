@@ -39,6 +39,10 @@ module.exports = {
 
     var parsed;
 
+    if (!body.length) {
+      return "NO RESPONSE BODY RETURNED, CHECK YOUR API KEY";
+    }
+
     try {
       parsed = csv.parseRows(body);
     } catch(e) {
