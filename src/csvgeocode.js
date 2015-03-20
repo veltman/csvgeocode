@@ -203,19 +203,15 @@ Geocoder.prototype.run = function(input,output,options) {
 
         output = output || process.stdout;
 
-        csv.stringify(results,function(string){
+        try {
 
-          try {
+          output.write(csv.stringify(results),summarize);
 
-            output.write(string,summarize);
+        } catch(e) {
 
-          } catch(e) {
+          throw new TypeError("Second argument output needs to be a filename or a writeable stream.");
 
-            throw new TypeError("Second argument output needs to be a filename or a writeable stream.");
-
-          }
-
-        });
+        }
 
       }
 
