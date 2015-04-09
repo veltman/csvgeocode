@@ -35,7 +35,9 @@ if (args.help || !args._ || !args._.length) {
 }
 
 for (var key in args) {
-  options[key] = args[key];
+  if (args[key] !== undefined) {
+    options[key] = args[key];
+  }
 }
 
 //They specified an output file
