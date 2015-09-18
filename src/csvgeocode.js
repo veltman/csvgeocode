@@ -96,7 +96,7 @@ Geocoder.prototype.run = function(input,output,options) {
 
   function codeRow(row,cb) {
 
-    var url = render(options.url,escape(row));
+    var url = encodeURI(render(options.url,row));
 
     //Doesn't need geocoding
     if (!options.force && misc.isNumeric(row[options.lat]) && misc.isNumeric(row[options.lng])) {
@@ -104,7 +104,7 @@ Geocoder.prototype.run = function(input,output,options) {
       return cb(null,row);
     }
 
-    //Address is cached from a previous result
+    // Address is cached from a previous result
     if (cache[url]) {
 
       row[options.lat] = cache[url].lat;
