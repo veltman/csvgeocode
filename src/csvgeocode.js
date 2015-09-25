@@ -96,7 +96,7 @@ Geocoder.prototype.run = function(input,output,options) {
 
   function codeRow(row,cb) {
 
-    var url = render(options.url,escape(row));
+    var url = encodeURI(render(options.url,escape(row)));
 
     //Doesn't need geocoding
     if (!options.force && misc.isNumeric(row[options.lat]) && misc.isNumeric(row[options.lng])) {

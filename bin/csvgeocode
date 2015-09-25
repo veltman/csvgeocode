@@ -15,7 +15,7 @@ var path = require("path"),
     .describe("help","Show this message")
     .boolean(["force","verbose","help"])
     .string(["_","lat","lng","url"])
-    .check(function(argv) {
+    .check(function(argv) {c
 
       if (argv.help) return;
       if ("delay" in argv && isNaN(Number(argv.delay))) {

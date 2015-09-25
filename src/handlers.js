@@ -62,5 +62,19 @@ module.exports = {
       lng: parsed[0][4]
     }
 
-  }
+  },  
+  osm: function(body) {
+
+    var response = JSON.parse(body);
+
+    if (!response.length) {
+      return "NO MATCH";
+    }
+
+    return {
+      lat: response[0].lat,
+      lng: response[0].lon
+    };
+
+  },
 };
