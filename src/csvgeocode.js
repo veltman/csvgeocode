@@ -229,7 +229,7 @@ Geocoder.prototype.run = function(input,output,options) {
     var escaped = extend({},row);
 
     for (var key in escaped) {
-      escaped[key] = escaped[key].replace(/ /g,"+").replace(/[&]/g,"%26")
+      escaped[key] = encodeURIComponent(escaped[key]).replace(/(%20| )/g,"+").replace(/[&]/g,"%26");
     }
 
     return escaped;

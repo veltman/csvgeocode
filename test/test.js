@@ -4,6 +4,7 @@ var assert = require("assert"),
 
 queue(1)
   .defer(basicTest)
+  .defer(norwegianTest)
   .defer(requiredTest)
   .defer(cacheTest)
   .defer(columnNamesTest)
@@ -15,6 +16,7 @@ queue(1)
   .awaitAll(function(){});
 
 function basicTest(cb) {
+
   geocode("test/basic.csv",{
       test: true,
       url: process.env.TEST_URL
@@ -42,10 +44,27 @@ function basicTest(cb) {
       assert.deepEqual(summary.successes,6,"Expected 6 successes");
       cb(null);
     });
+
+}
+
+function norwegianTest(cb) {
+
+  geocode("test/norwegian.csv",{
+      test: true,
+      url: process.env.TEST_NORWEGIAN_URL
+    })
+    .on("row",function(err,row){
+      assert(row.lat && row.lng,"failed row with norwegian characters");
+    })
+    .on("complete",function(summary){
+      assert.deepEqual(summary.failures,0,"Expected 0 failures");
+      assert.deepEqual(summary.successes,3,"Expected 3 successes");
+      cb(null);
+    });
+
 }
 
 function requiredTest(cb) {
-
 
   assert.throws(
     function(){

@@ -62,5 +62,33 @@ module.exports = {
       lng: parsed[0][4]
     }
 
+  },
+  osm: function(body) {
+
+    var parsed;
+
+    if (!body.length) {
+      return "NO RESPONSE BODY RETURNED, CHECK YOUR API KEY";
+    }
+
+    try {
+      parsed = JSON.parse(body);
+    } catch(e) {
+      return "ERROR PARSING RESPONSE: "+body;
+    }
+
+    if (!Array.isArray(parsed)) {
+      return "UNEXPECTED RESPONSE: "+body;
+    }
+
+    if (!parsed.length) {
+      return "NO MATCH";
+    }
+
+    return {
+      lat: parsed[0].lat,
+      lng: parsed[0].lon
+    };
+
   }
 };
