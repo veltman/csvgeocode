@@ -47,6 +47,8 @@ http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{address}}.json?access_tok
 https://maps.googleapis.com/maps/api/geocode/json?address={{address}}&key=MY_API_KEY
 
 http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx?apiKey=MY_API_KEY&version=4.01&streetAddress={{address}}&city={{city}}&state={{state}}
+
+https://search.mapzen.com/v1/search?api_key=MY_API_KEY&text={{address}}
 ```
 
 #### `--handler [handler]`
