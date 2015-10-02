@@ -1,9 +1,9 @@
 csvgeocode
 ==========
 
-For when you have a CSV with addresses and you want a lat/lng for every row.  Bulk geocode addresses a CSV with a few lines of code. 
+For when you have a CSV with addresses and you want a lat/lng for every row.  Bulk geocode addresses a CSV with a few lines of code.
 
-The defaults are configured for [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.  There are built-in response handlers for [Google](https://developers.google.com/maps/documentation/geocoding/), [Mapbox](https://www.mapbox.com/developers/api/geocoding/), and [Texas A & M's](http://geoservices.tamu.edu/Services/Geocode/WebService/) geocoders (details below).
+The defaults are configured for [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.  There are built-in response handlers for [Google](https://developers.google.com/maps/documentation/geocoding/), [Mapbox](https://www.mapbox.com/developers/api/geocoding/), [Mapzen](https://mapzen.com/projects/search), and [Texas A & M's](http://geoservices.tamu.edu/Services/Geocode/WebService/) geocoders (details below).
 
 Make sure that you use this in compliance with the relevant API's terms of service.
 
@@ -51,7 +51,7 @@ http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNo
 
 #### `--handler [handler]`
 
-What handler function to process the API response with.  Current built-in handlers are `"google"`, `"mapbox"`, and `"tamu"`. Contributions of handlers for other geocoders are welcome! You can define a custom handler when using this as a Node module (see below).
+What handler function to process the API response with.  Current built-in handlers are `"google"`, `"mapbox"`, `"mapzen"`, and `"tamu"`. Contributions of handlers for other geocoders are welcome! You can define a custom handler when using this as a Node module (see below).
 
 Examples:
 ```
