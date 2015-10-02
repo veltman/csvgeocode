@@ -59,6 +59,8 @@ Examples:
 ```
 $ csvgeocode input.csv --url "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{MY_ADDRESS_COLUMN_NAME}}.json?access_token=123ABC" --handler mapbox
 
+$ csvgeocode input.csv --url 'https://search.mapzen.com/v1/search?api_key=123ABC&text={{MY_ADDRESS_COLUMN_NAME}}' --handler mapzen
+
 $ csvgeocode input.csv --url "http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx?version=4.01&streetAddress={{ADDR}}&city={{CITY}}&state={{STATE}}&apiKey=123ABC" --handler tamu
 ```
 
