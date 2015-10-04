@@ -220,6 +220,15 @@ function customHandler(body) {
 }
 ```
 
+## Contributing/tests
+
+The tests for the Mapbox and TAMU geocoders both require API keys.  To run those tests, you need those API keys in a `.env` file in the project's root folder that defines two environment variables like so:
+
+```
+MAPBOX_API_KEY=123ABC
+TAMU_API_KEY=123ABC
+```
+
 ## Some Alternatives
 
 * [file-geocoder](https://www.npmjs.com/package/file-geocoder)
