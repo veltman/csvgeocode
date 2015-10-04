@@ -35,6 +35,22 @@ module.exports = {
     };
 
   },
+  mapzen: function(body) {
+
+    var response = JSON.parse(body);
+
+    if (response.features === undefined) {
+      return response.message;
+    } else if (!response.features.length) {
+      return "NO MATCH";
+    }
+
+    return {
+      lat: response.features[0].geometry.coordinates[1],
+      lng: response.features[0].geometry.coordinates[0]
+    };
+
+  },
   tamu: function(body) {
 
     var parsed;

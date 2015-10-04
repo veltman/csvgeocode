@@ -1,9 +1,9 @@
 csvgeocode
 ==========
 
-For when you have a CSV with addresses and you want a lat/lng for every row.  Bulk geocode addresses a CSV with a few lines of code. 
+For when you have a CSV with addresses and you want a lat/lng for every row.  Bulk geocode addresses a CSV with a few lines of code.
 
-The defaults are configured for [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.  There are built-in response handlers for [Google](https://developers.google.com/maps/documentation/geocoding/), [Mapbox](https://www.mapbox.com/developers/api/geocoding/), and [Texas A & M's](http://geoservices.tamu.edu/Services/Geocode/WebService/) geocoders (details below).
+The defaults are configured for [Google's geocoder](https://developers.google.com/maps/documentation/geocoding/) but it can be configured to work with any other similar geocoding service.  There are built-in response handlers for [Google](https://developers.google.com/maps/documentation/geocoding/), [Mapbox](https://www.mapbox.com/developers/api/geocoding/), [Mapzen](https://mapzen.com/projects/search), and [Texas A & M's](http://geoservices.tamu.edu/Services/Geocode/WebService/) geocoders (details below).
 
 Make sure that you use this in compliance with the relevant API's terms of service.
 
@@ -47,15 +47,19 @@ http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{address}}.json?access_tok
 https://maps.googleapis.com/maps/api/geocode/json?address={{address}}&key=MY_API_KEY
 
 http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx?apiKey=MY_API_KEY&version=4.01&streetAddress={{address}}&city={{city}}&state={{state}}
+
+https://search.mapzen.com/v1/search?api_key=MY_API_KEY&text={{address}}
 ```
 
 #### `--handler [handler]`
 
-What handler function to process the API response with.  Current built-in handlers are `"google"`, `"mapbox"`, and `"tamu"`. Contributions of handlers for other geocoders are welcome! You can define a custom handler when using this as a Node module (see below).
+What handler function to process the API response with.  Current built-in handlers are `"google"`, `"mapbox"`, `"mapzen"`, and `"tamu"`. Contributions of handlers for other geocoders are welcome! You can define a custom handler when using this as a Node module (see below).
 
 Examples:
 ```
 $ csvgeocode input.csv --url "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{MY_ADDRESS_COLUMN_NAME}}.json?access_token=123ABC" --handler mapbox
+
+$ csvgeocode input.csv --url 'https://search.mapzen.com/v1/search?api_key=123ABC&text={{MY_ADDRESS_COLUMN_NAME}}' --handler mapzen
 
 $ csvgeocode input.csv --url "http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx?version=4.01&streetAddress={{ADDR}}&city={{CITY}}&state={{STATE}}&apiKey=123ABC" --handler tamu
 ```
