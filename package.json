@@ -35,5 +35,8 @@
     "queue-async": "^1.0.7",
     "request": "^2.53.0",
     "yargs": "^3.0.4"
+  },
+  "devDependencies": {
+    "dotenv": "^1.2.0"
   }
 }

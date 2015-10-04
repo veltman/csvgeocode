@@ -1,25 +1,40 @@
 var assert = require("assert"),
     geocode = require("../"),
-    queue = require("queue-async");
+    queue = require("queue-async")(1);
 
-queue(1)
-  .defer(basicTest)
-  .defer(norwegianTest)
-  .defer(requiredTest)
-  .defer(cacheTest)
-  .defer(columnNamesTest)
-  .defer(addColumnsTest)
-  .defer(handlerTest)
-  .defer(mapboxTest)
-  .defer(throwTest)
-  .defer(tamuTest)
-  .awaitAll(function(){});
+// Load API keys
+require("dotenv").load();
+
+// Test URLs
+var googleTestUrl = "https://maps.googleapis.com/maps/api/geocode/json?address={{address}}",
+    googleNorwegianTestUrl = "https://maps.googleapis.com/maps/api/geocode/json?address={{Bosatt}},Norway",
+    mapboxTestUrl = "http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{address}}.json?access_token=" + process.env.MAPBOX_API_KEY,
+    tamuTestUrl = "http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx?apiKey=" + process.env.TAMU_API_KEY + "&version=4.01&streetAddress={{street}}&city={{city}}&state={{state}}";
+
+queue.defer(basicTest)
+     .defer(norwegianTest)
+     .defer(requiredTest)
+     .defer(cacheTest)
+     .defer(columnNamesTest)
+     .defer(addColumnsTest)
+     .defer(handlerTest)
+     .defer(throwTest);
+
+if (process.env.MAPBOX_API_KEY) {
+  queue.defer(mapboxTest);
+}
+
+if (process.env.TAMU_API_KEY) {
+  queue.defer(tamuTest);
+}
+
+queue.awaitAll(function(){});
 
 function basicTest(cb) {
 
   geocode("test/basic.csv",{
       test: true,
-      url: process.env.TEST_URL
+      url: googleTestUrl
     })
     .on("row",function(err,row){
       assert("address" in row && 
@@ -51,7 +66,7 @@ function norwegianTest(cb) {
 
   geocode("test/norwegian.csv",{
       test: true,
-      url: process.env.TEST_NORWEGIAN_URL
+      url: googleNorwegianTestUrl
     })
     .on("row",function(err,row){
       assert(row.lat && row.lng,"failed row with norwegian characters");
@@ -88,7 +103,7 @@ function cacheTest(cb) {
   geocode("test/basic.csv",{
       force: true,
       test: true,
-      url: process.env.TEST_URL
+      url: googleTestUrl
     })
     .on("row",function(err,row){
       if (row.address === "CACHED GIBBERISH ADDRESS") {
@@ -109,7 +124,7 @@ function columnNamesTest(cb) {
       lat: "LERTITUDE",
       lng: "LANGITUDE",
       test: true,
-      url: process.env.TEST_URL
+      url: googleTestUrl
     })
     .on("row",function(err,row){
       assert.deepEqual(row.lat,undefined);
@@ -130,7 +145,7 @@ function columnNamesTest(cb) {
 function addColumnsTest(cb) {
   geocode("test/column-names.csv",{
       test: true,
-      url: process.env.TEST_URL
+      url: googleTestUrl
     })
     .on("row",function(err,row){
       if (err) {
@@ -146,7 +161,7 @@ function addColumnsTest(cb) {
 function handlerTest(cb) {
   geocode("test/basic.csv",{
       force: true,
-      url: process.env.TEST_URL,
+      url: googleTestUrl,
       handler: function(body) {
           return "CUSTOM ERROR";
       },
@@ -167,7 +182,7 @@ function throwTest(cb) {
     function(){
       geocode("test/basic.csv",{
         test: true,
-        url: process.env.TEST_URL,
+        url: googleTestUrl,
         handler: "dumb string"
       });
     },
@@ -187,7 +202,7 @@ function mapboxTest(cb) {
 
   geocode("test/basic.csv",{
       handler: "mapbox",
-      url: process.env.MAPBOX_TEST_URL,
+      url: mapboxTestUrl,
       test: true
     })
     .on("row",function(err,row){
@@ -208,7 +223,7 @@ function tamuTest(cb) {
 
   geocode("test/parts.csv",{
       handler: "tamu",
-      url: process.env.TAMU_TEST_URL,
+      url: tamuTestUrl,
       test: true
     })
     .on("row",function(err,row){
