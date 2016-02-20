@@ -13,6 +13,13 @@ module.exports = {
     //No match, return a string
     if (response.status === "ZERO_RESULTS" || response.status === "OK") {
       return "NO MATCH";
+    } else if (response.status === "REQUEST_DENIED") {
+      // Request denied, return a string with detailed error.
+      var message = "REQUEST DENIED.";
+      if (response.error_message && response.error_message.length) {
+        message += " Google Geocoder API says: '" + response.error_message + "'.";
+      }
+      return message;
     }
 
     //Other error, return a string
