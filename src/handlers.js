@@ -16,7 +16,7 @@ module.exports = {
     }
 
     //Other error, return a string
-    return response.status;
+    return response.status + (response.error_message && response.error_message.length ? ": " + response.error_message : "");
 
   },
   mapbox: function(body) {
