@@ -14,7 +14,7 @@ var path = require("path"),
     .describe("handler","What API handler to use.  Current built-in options are 'mapbox', 'google', and 'tamu'.  Default: 'google'")
     .describe("help","Show this message")
     .boolean(["force","verbose","help"])
-    .string(["_","lat","lng","url"])
+    .string(["_","lat","lng","url","handler"])
     .check(function(argv) {
 
       if (argv.help) return;
@@ -32,6 +32,10 @@ var path = require("path"),
 
 if (args.help || !args._ || !args._.length) {
   return yargs.showHelp();
+}
+
+if (!args.handler) {
+  console.warn("No handler specified, defaulting to Google");
 }
 
 for (var key in args) {
