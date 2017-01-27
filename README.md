@@ -51,6 +51,12 @@ http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNo
 https://search.mapzen.com/v1/search?api_key=MY_API_KEY&text={{address}}
 ```
 
+Since this is just a Mustache template, we can also expand it to concatenate multiple fields:
+
+```
+https://maps.googleapis.com/maps/api/geocode/json?address={{address}},{{city}},{{state}}&key=MY_API_KEY
+```
+
 #### `--handler [handler]`
 
 What handler function to process the API response with.  Current built-in handlers are `"google"`, `"mapbox"`, `"mapzen"`, `"osm"`, and `"tamu"`. Contributions of handlers for other geocoders are welcome! You can define a custom handler when using this as a Node module (see below).
