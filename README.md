@@ -51,10 +51,10 @@ http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNo
 https://search.mapzen.com/v1/search?api_key=MY_API_KEY&text={{address}}
 ```
 
-Since this is just a Mustache template, we can also expand it to concatenate multiple fields:
+If your addresses are broken up into multiple columns (e.g. a street_address column, a city column, and a state column), you can use them all together in a URL template:
 
 ```
-https://maps.googleapis.com/maps/api/geocode/json?address={{address}},{{city}},{{state}}&key=MY_API_KEY
+https://maps.googleapis.com/maps/api/geocode/json?address={{street_address}},{{city}},{{state}}&key=MY_API_KEY
 ```
 
 #### `--handler [handler]`
