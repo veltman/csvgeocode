@@ -223,7 +223,7 @@ You can use any basic geocoding service from within a Node script by supplying a
 
 The easiest way to see what a handler should look like is to look at [handlers.js](./src/handlers.js).
 
-The handler function is passed the body of an API response and should either return a string error message or an object with `lat` and `lng` properties.
+The handler function is passed the body of an API response and should either return a string error message or an object with `lat` and `lng` properties. Additional properties may be returned.
 
 ```js
 
@@ -239,7 +239,8 @@ function customHandler(body) {
   if (body.result) {
     return {
       lat: body.result.lat,
-      lng: body.result.lng
+      lng: body.result.lng,
+      id: body.result.id
     };
   }
 

@@ -114,11 +114,17 @@ Geocoder.prototype.run = function(input,output,options) {
 
       row[options.lat] = cache[url].lat;
       row[options.lng] = cache[url].lng;
+      for (var k in cache[url]) {
+        if (k !== "lat" && k !== "lng") {
+          row[k] = cache[url][k];
+        }
+      }
 
       _this.emit("row",null,row);
       return cb(null,row);
 
     }
+
 
     request.get(url,function(err,response,body) {
     
@@ -167,6 +173,11 @@ Geocoder.prototype.run = function(input,output,options) {
 
       row[options.lat] = result.lat;
       row[options.lng] = result.lng;
+      for (var k in result) {
+        if (k !== "lat" && k !== "lng") {
+          row[k] = result[k];
+        }
+      }
 
       //Cache the result
       cache[url] = result;
