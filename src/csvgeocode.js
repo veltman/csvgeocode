@@ -8,6 +8,7 @@ var misc = require("./misc"),
     util = require("util"),
     render = require("mustache").render,
     csv = require("./csv"),
+    querystring = require('querystring'),
     EventEmitter = require("events").EventEmitter;
 
 module.exports = generate;
@@ -47,8 +48,8 @@ function generate(inFile,outFile,userOptions) {
     throw new TypeError("Invalid value for output.  Needs to be a string filename.");
   }
 
-  if (typeof options.url !== "string") {
-    throw new Error("'url' parameter is required.");
+  if (typeof options.baseURL !== "string") {
+    throw new Error("'baseURL' parameter is required.");
   }
 
   var geocoder = new Geocoder();
@@ -96,7 +97,11 @@ Geocoder.prototype.run = function(input,output,options) {
 
   function codeRow(row,cb) {
 
-    var url = render(options.url,escape(row));
+    var customURLParams = {};
+    for (var k in options.customURLParams) {
+        customURLParams[k] = row[options.customURLParams[k]];
+    }
+    var url = render(options.baseURL, escape(row)) + "?" + querystring.stringify(extend(options.defaultURLParams, customURLParams));;
 
     //Doesn't need geocoding
     if (!options.force && misc.isNumeric(row[options.lat]) && misc.isNumeric(row[options.lng])) {

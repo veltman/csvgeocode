@@ -18,7 +18,7 @@ npm install -g csvgeocode
 Use it:
 
 ```
-$ csvgeocode path/to/input.csv path/to/output.csv --url "https://maps.googleapis.com/maps/api/geocode/json?address={{MY_ADDRESS_COLUMN_NAME}}&key=MY_API_KEY"
+$ csvgeocode path/to/input.csv path/to/output.csv --baseURL "https://maps.googleapis.com/maps/api/geocode/json" --defaultURLParams '{"key": "MY_API_KEY"}' --customURLParams '{"address": "MY_ADDRESS_COLUMN_NAME"}'
 ```
 
 If you don't specify an output file, the output will stream to stdout instead, so you can stream the result as an HTTP response or do something like:
@@ -32,29 +32,35 @@ $ csvgeocode path/to/input.csv [options] | grep "greppin for somethin"
 You can add extra options when running `csvgeocode`.  For example:
 
 ```
-$ csvgeocode input.csv output.csv --url "http://someurl.com/" --lat CALL_MY_LATITUDE_COLUMN_THIS_SPECIAL_NAME --delay 1000 --verbose
+$ csvgeocode input.csv output.csv --baseURL "http://someurl.com/" --lat CALL_MY_LATITUDE_COLUMN_THIS_SPECIAL_NAME --delay 1000 --verbose
 ```
 
-The only required option is `url`.  All others are optional.
+The only required option is `baseURL`.  All others are optional.
 
-#### `--url [url]` (REQUIRED)
+#### `--baseURL [baseurl]` (REQUIRED)
 
-A URL template with column names as [Mustache tags](http://mustache.github.io/), like:
+A Base URL without the query parameters.
 
-```
-http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{address}}.json?access_token=MY_API_KEY
+#### `--defaultURLParams [JSON static query parameters]`
+#### `--customURLParams [JSON dynamic query parameters]`
 
-https://maps.googleapis.com/maps/api/geocode/json?address={{address}}&key=MY_API_KEY
-
-http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx?apiKey=MY_API_KEY&version=4.01&streetAddress={{address}}&city={{city}}&state={{state}}
-
-https://search.mapzen.com/v1/search?api_key=MY_API_KEY&text={{address}}
-```
-
-If your addresses are broken up into multiple columns (e.g. a street_address column, a city column, and a state column), you can use them all together in a URL template:
+Examples:
 
 ```
-https://maps.googleapis.com/maps/api/geocode/json?address={{street_address}},{{city}},{{state}}&key=MY_API_KEY
+--baseURL 'http://api.tiles.mapbox.com/v4/geocode/mapbox.places/{{address}}.json'
+--defaultURLParams '{"access_token": "MY_API_KEY"}'
+
+--baseURL 'https://maps.googleapis.com/maps/api/geocode/json'
+--defaultURLParams '{"key": "MY_API_KEY"}'
+--customURLParams '{"address": "address"}'
+
+--baseURL 'http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx'
+--defaultURLParams '{"apiKey": "MY_API_KEY", "version": "4.01"}'
+--customURLParams  '{"streetAddress": "address", "city": "city", "state": "state"}'
+
+--baseURL 'https://search.mapzen.com/v1/search'
+--defaultURLParams '{"api_key": "MY_API_KEY"}'
+--customURLParams '{"text": "address"}'
 ```
 
 #### `--handler [handler]`
@@ -99,7 +105,7 @@ By default, if a lat/lng is already found in an input row, that will be kept.  I
 See extra output while csvgeocode is running.
 
 ```
-$ csvgeocode input.csv --url "MY_API_URL" --verbose
+$ csvgeocode input.csv --baseURL "MY_API_URL" --defaultURLParams '{"language": "en"}' --customURLParams '{"q": "query"}' --verbose
 160 Varick St,New York,NY
 SUCCESS
 
@@ -129,12 +135,24 @@ var csvgeocode = require("csvgeocode");
 
 //stream to stdout
 csvgeocode("path/to/input.csv",{
-    url: "MY_API_URL"
+    baseURL: "MY_API_URL",
+    defaultURLParams: {
+        language: 'en'
+    },
+    customURLParams: {
+        q: 'query'
+    }
   });
 
 //write to a file
 csvgeocode("path/to/input.csv","path/to/output.csv",{
-    url: "MY_API_URL"
+    baseURL: "MY_API_URL",
+    defaultURLParams: {
+        language: 'en'
+    },
+    customURLParams: {
+        q: 'query'
+    }
   });
 ```
 
@@ -142,7 +160,9 @@ You can add all the same options in a script, except for `verbose`.
 
 ```js
 var options = {
-  "url": "MY_API_URL",
+  "baseURL": "MY_API_URL",
+  "defaultURLParams": { language: 'en' },
+  "customURLParams": { q: 'query' },
   "lat": "MY_SPECIAL_LATITUDE_COLUMN_NAME",
   "lng": "MY_SPECIAL_LONGITUDE_COLUMN_NAME",
   "delay": 1000,
@@ -208,7 +228,9 @@ The handler function is passed the body of an API response and should either ret
 ```js
 
 csvgeocoder("input.csv",{
-  url: "MY_API_URL",
+  baseURL: "MY_API_URL",
+  defaultURLParams: { language: 'en' },
+  customURLParams: { q: 'query' },
   handler: customHandler
 });
 
