@@ -99,7 +99,13 @@ Geocoder.prototype.run = function(input,output,options) {
 
     var customURLParams = {};
     for (var k in options.customURLParams) {
-        customURLParams[k] = row[options.customURLParams[k]];
+        if (Array.isArray(options.customURLParams[k])) {
+            customURLParams[k] = options.customURLParams[k].map(function (i) {
+                return row[i];
+            }).join(', ');
+        } else {
+            customURLParams[k] = row[options.customURLParams[k]];
+        }
     }
     var url = render(options.baseURL, escape(row)) + "?" + querystring.stringify(extend(options.defaultURLParams, customURLParams));;
 

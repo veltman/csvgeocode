@@ -52,7 +52,7 @@ Examples:
 
 --baseURL 'https://maps.googleapis.com/maps/api/geocode/json'
 --defaultURLParams '{"key": "MY_API_KEY"}'
---customURLParams '{"address": "address"}'
+--customURLParams '{"address": ["address", "city", "state", "country"]}'
 
 --baseURL 'http://geoservices.tamu.edu/Services/Geocode/WebService/GeocoderWebServiceHttpNonParsed_V04_01.aspx'
 --defaultURLParams '{"apiKey": "MY_API_KEY", "version": "4.01"}'
